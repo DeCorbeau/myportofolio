@@ -1,61 +1,160 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faiz - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faiz Yusuf Elriki | Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <header class="site-header">
-        <div class="container">
-            <a href="#profile" class="brand">Faiz</a>
-            <nav>
-                <a href="#profile">Profile</a>
-            </nav>
-        </div>
-    </header>
 
-    <main>
-        <section class="hero" id="profile">
-            <div class="container hero-grid">
-                <div class="hero-identity">
-                    <p class="hero-kicker">Information System &middot; Universitas Indonesia</p>
-                    <h1>Faiz Yusuf Elriki</h1>
-                </div>
-                <div class="hero-photo">
-                    <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/foto.jpg" alt="Photo of Faiz">
-                </div>
-                <div class="hero-details">
-                    <p class="bio">I’m a passionate learner with a strong interest in technology, programming, and business. I enjoy exploring new ideas, sharpening my skills, and finding ways to apply them in real-world situations. I believe growth comes from learning with and from others. Whether it’s through collaboration, mentorship, or simply sharing perspectives, I’m always eager to absorb knowledge and exchange experiences. With a growth-driven mindset, I aim to contribute positively wherever I go while continuously improving myself along the way.</p>
-                    <dl class="meta-list">
-                        <div class="meta-row">
-                            <dt>NPM</dt>
-                            <dd>2506607921</dd>
-                        </div>
-                        <div class="meta-row">
-                            <dt>Program</dt>
-                            <dd>S1 Sistem Informasi</dd>
-                        </div>
-                    </dl>
-                    <div class="social-links">
-                        <a href="https://github.com/DeCorbeau" class="social-link">GitHub</a>
-                        <a href="https://linkedin.com/in/faiz-yusuf-elriki/" class="social-link">LinkedIn</a>
-                        <a href="mailto:faizelriki@gmail.com" class="social-link">Email</a>
-                    </div>
-                </div>
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="#about" class="brand-logo">Faiz<span>.</span></a>
+      <nav class="nav-menu">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-section" id="about">
+      <div class="hero-container">
+        
+        <div class="avatar-wrapper">
+          <div class="avatar-glow"></div>
+          <img src="{% static 'img/foto.jpg' %}" alt="Photo of Faiz" class="avatar-img">
+        </div>
+
+        <div class="hero-content">
+          <p class="hero-tagline">Information Systems &middot; Universitas Indonesia</p>
+          <h1 class="hero-title">Faiz Yusuf Elriki</h1>
+          
+          <div class="hero-badge-group">
+            <span class="badge">NPM: 2506607921</span>
+            <span class="badge">S1 Sistem Informasi</span>
+          </div>
+
+          <p class="hero-bio">
+            I’m a passionate learner with a strong interest in technology, programming, and business. 
+            I enjoy exploring new ideas, sharpening my skills, and finding ways to apply them in real-world situations. 
+            I believe growth comes from learning with and from others. Whether it’s through collaboration, 
+            mentorship, or simply sharing perspectives, I’m always eager to absorb knowledge and exchange experiences. 
+            With a growth-driven mindset, I aim to contribute positively wherever I go while continuously improving myself along the way.
+          </p>
+
+          <div class="hero-links">
+            <a href="https://github.com/DeCorbeau" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">GitHub</a>
+            <a href="https://linkedin.com/in/faiz-yusuf-elriki/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">LinkedIn</a>
+            <a href="mailto:faizelriki@gmail.com" class="btn btn-secondary">Email</a>
+          </div>
+        </div>
+
+        <div class="astro-wrapper">
+          <div class="astro-bubble">Hello, I'm Faiz!</div>
+          <img src="{% static 'img/astro-laptop.png' %}" alt="" class="astro-decor" aria-hidden="true">
+        </div>        
+
+      </div>
+    </section>
+
+    <section class="experience-section" id="experience">
+      <div class="section-container">
+        
+        <div class="section-header">
+          <p class="section-kicker">Leadership &amp; Activities</p>
+          <h2 class="section-title">Organizational Experience</h2>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="card-meta">
+                <span class="role-category">Committee</span>
+                <span class="role-date">Feb 2026 — Present</span>
+              </div>
+              <h3 class="role-title">Person in Charge (PIC) Ambassador Division</h3>
+              <h4 class="org-name">Open House Fasilkom UI 2026</h4>
+              <ul class="role-desc-list">
+                <li>Leading an <em>8-member</em> Ambassador Division (1 PIC, 1 VPIC, 6 staff), holding full ownership of the division's strategic direction and day-to-day operations.</li>
+                <li>Designed the division's work timeline and workflow from the ground up, including selection criteria, interview scoring rubrics, and the recruitment mechanism for both staff and ambassadors, reaching 40+ staff applicants and 160+ for ambassadors applicants.</li>
+                <li>Built the division's core operational infrastructure including MoUs, registration procedures, task guidebooks, and a contingency mechanism for extending recruitment periods, complete with defined triggers and decision flows.</li>
+                <li>Conceptualized and oversaw <em>five ambassador special programs</em> including Welcoming Ambassador, RISTEK Class, Webinar with Alumni, Mentoring 1-on-1, and Farewell Party, each with defined success metrics spanning attendance targets, satisfaction scores, and material comprehension rates.</li>
+                <li>Serve as the division's point of accountability, coordinating cross-divisional collaboration and reporting to the Core Program Manager.</li>
+              </ul>
             </div>
-        </section>
-    </main>
+          </article>
 
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 Faiz. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+          <article class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="card-meta">
+                <span class="role-category">Committee</span>
+                <span class="role-date">Mar 2026 — Present</span>
+              </div>
+              <h3 class="role-title">HR Staff of IT Development</h3>
+              <h4 class="org-name">COMPFEST 18</h4>
+              <ul class="role-desc-list">
+                <li>Monitor the IT Development team's day-to-day performance and project progress, compiling regular progress recaps for internal reporting and review.</li>
+                <li>Support recruitment for IT Dev staff across both the <em>Software Engineering and UI/UX</em> sub-divisions.</li>
+                <li>Foster a positive and cohesive team culture through bonding initiatives and engagement activities, helping maintain a comfortable and motivating work environment.</li>
+                <li>Support core people-operations functions for the division including check-ins, progress tracking, and internal communication to help sustain team cohesion and productivity.</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="card-meta">
+                <span class="role-category">Internship</span>
+                <span class="role-date">May 2026 — Aug 2026</span>
+              </div>
+              <h3 class="role-title">Event Intern</h3>
+              <h4 class="org-name">RISTEK Summer Event 2026: Datathon 2026</h4>
+              <ul class="role-desc-list">
+                <li>Served as <em>PIC for Workshop 4</em>, a national-scale workshop with 200+ participants, owning the speaker ToR, content alignment, event rundown, MC cue cards, and serving as the primary liaison with speakers throughout.</li>
+                <li>During the high-school registration phase, personally reached out to <em>25 schools and secured engagement from 3 major communities</em> as part of the team's broader outreach of 47 schools and 19 communities, helping drive a combined <em>1,200+ registrants</em> across university and high-school levels.</li>
+                <li>Served as <em>VPIC for Final Day</em>, the competition's <em>300+-attendee</em> culminating event, handling manpower allocation, the day's rundown and cue cards (finalist pitching through partner workshops with Glair AI and GoPay), and the logistics procurement list.</li>
+                <li>Worked as on-site field coordinator at the main auditorium stage on event day, overseeing run-of-show execution, stakeholder seating, live-report coverage, real-time cue card adjustments, and registration flow.</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="card-meta">
+                <span class="role-category">Committee</span>
+                <span class="role-date">Aug 2025 — Dec 2025</span>
+              </div>
+              <h3 class="role-title">Ambassador Division Staff</h3>
+              <h4 class="org-name">Open House Fasilkom UI 2025</h4>
+              <ul class="role-desc-list">
+                <li>Served as <em>PIC for RISTEK Class</em>, an exclusive ambassador benefit program themed "Innovating Ideas: From Technology Concepts to Real-World Solutions," managing the full pipeline end-to-end including speaker ToR, event rundown, pre-event assignments, MC cue cards, presentation materials, and speaker appreciation certificates.</li>
+                <li>Served as <em>VPIC for Mentoring 1-on-1</em>, a program pairing ambassadors with student mentors to build their knowledge of Open House and the Faculty of Computer Science; owned the rundown, MC cue cards, and mentor guidebook, and personally recruited <em>approximately 15 of the 20 required mentors within 2-3 days</em>.</li>
+                <li>Acted as cross-divisional liaison with Business Development (ensuring incentives and merchandise reached speakers) and Digital Engagement & Collaboration (ensuring consistent live-report coverage across all special programs).</li>
+                <li>Mentored one of three ambassador teams that collectively drove <em>approximately 40% (~195 people) of total main event attendance</em>, earning the division formal recognition for the achievement.</li>
+              </ul>
+            </div>
+          </article>
         </div>
-    </footer>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>&copy; 2026 Faiz Yusuf Elriki. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
