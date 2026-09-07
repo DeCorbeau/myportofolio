@@ -92,7 +92,12 @@ body {
     padding: 80px 24px 60px;
 }
 
-/* Layer 1: gambar background (planet ungu), diletakkan di belakang semuanya */
+.hero-section,
+.experience-section {
+    scroll-margin-top: 50px;
+}
+
+/* Layer 1: gambar background (planet ungu) */
 .hero-section::before {
     content: "";
     position: absolute;
