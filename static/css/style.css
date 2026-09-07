@@ -252,6 +252,7 @@ body {
     line-height: 1.7;
     margin-bottom: 24px;
     max-width: 620px;
+    text-align: justify;
 }
 
 .hero-links {
@@ -385,6 +386,7 @@ body {
     padding: 24px;
     backdrop-filter: blur(8px);
     transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+    text-align: justify;
 }
 
 .card-meta {
