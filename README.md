@@ -45,7 +45,7 @@ Halaman portofolio ini berisi dua section utama:
 
 ### Tugas 1
 
-1. **Pada Tutorial dan Tugas 1, Anda diberi kebebasan untuk menentukan tampilan dari website portofolio Anda. Saat Anda merancang struktur HTML yang digunakan, apakah Anda menggunakan elemen semantik HTML5 seperti <section>, <article>, atau <aside>? Jika iya, bagaimana elemen tersebut membantu Anda dalam membuat static web? Jika tidak, mengapa tanpa elemen tersebut sudah memenuhi kebutuhan desain Anda?**
+1. **Pada Tutorial dan Tugas 1, Anda diberi kebebasan untuk menentukan tampilan dari website portofolio Anda. Saat Anda merancang struktur HTML yang digunakan, apakah Anda menggunakan elemen semantik HTML5 seperti section, article, atau aside? Jika iya, bagaimana elemen tersebut membantu Anda dalam membuat static web? Jika tidak, mengapa tanpa elemen tersebut sudah memenuhi kebutuhan desain Anda?**
 
    Ya, saya menggunakan elemen semantik HTML5 secara konsisten, yaitu header untuk navigasi, section untuk dua blok konten utama (About dan Experience), article untuk setiap kartu pengalaman pada timeline, serta footer untuk penutup halaman. Pemilihan article didasarkan pada pemahaman bahwa setiap entri pengalaman merupakan konten yang berdiri sendiri dan tetap bermakna meskipun dipisahkan dari konteks sekitarnya, sesuai dengan definisi elemen tersebut pada spesifikasi HTML5. Sementara itu, section digunakan untuk mengelompokkan tema besar pada halaman, yang juga memudahkan saya dalam menulis aturan CSS secara lebih terstruktur tanpa nama kelas yang generik.
 
