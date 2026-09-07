@@ -288,6 +288,18 @@ body {
     transform: translateY(-2px);
 }
 
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
 /* =========================================================================
    4. EXPERIENCE TIMELINE SECTION
    ========================================================================= */
