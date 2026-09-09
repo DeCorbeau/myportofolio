@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Faiz Yusuf Elriki | Portfolio</title>
+  <title>{{ name }} | Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,10 +14,10 @@
 
   <header class="site-header">
     <div class="nav-container">
-      <a href="#about" class="brand-logo">Faiz<span>.</span></a>
-      <nav class="nav-menu">
-        <a href="#about">About</a>
-        <a href="#experience">Experience</a>
+      <a href="{% url 'main:show_main' %}" class="brand-logo">{{ name }}<span>.</span></a>
+      <nav>
+          <a href="{% url 'main:show_main' %}">Profile</a>
+          <a href="{% url 'main:show_experience' %}">Experience</a>
       </nav>
     </div>
   </header>
@@ -28,24 +28,20 @@
         
         <div class="avatar-wrapper">
           <div class="avatar-glow"></div>
-          <img src="{% static 'img/foto.jpg' %}" alt="Photo of Faiz" class="avatar-img">
+          <img src="{% static 'img/foto.jpg' %}" alt="Photo of {{ name }}" class="avatar-img">
         </div>
 
         <div class="hero-content">
           <p class="hero-tagline">Information Systems &middot; Universitas Indonesia</p>
-          <h1 class="hero-title">Faiz Yusuf Elriki</h1>
+          <h1 class="hero-title">{{ name }}</h1>
           
           <div class="hero-badge-group">
-            <span class="badge">NPM: 2506607921</span>
-            <span class="badge">S1 Sistem Informasi</span>
+            <span class="badge">NPM: {{ npm }}</span>
+            <span class="badge">{{ study_program }}</span>
           </div>
 
           <p class="hero-bio">
-            I’m a passionate learner with a strong interest in technology, programming, and business. 
-            I enjoy exploring new ideas, sharpening my skills, and finding ways to apply them in real-world situations. 
-            I believe growth comes from learning with and from others. Whether it’s through collaboration, 
-            mentorship, or simply sharing perspectives, I’m always eager to absorb knowledge and exchange experiences. 
-            With a growth-driven mindset, I aim to contribute positively wherever I go while continuously improving myself along the way.
+            {{ bio }}
           </p>
 
           <div class="hero-links">
@@ -72,7 +68,7 @@
         </div>
 
         <div class="astro-wrapper">
-          <div class="astro-bubble">Hello, I'm Faiz!</div>
+          <div class="astro-bubble">Hello, I'm {{ short_name }}!</div>
           <img src="{% static 'img/astro-laptop.png' %}" alt="" class="astro-decor" aria-hidden="true">
         </div>        
 
@@ -176,7 +172,7 @@
 
   <footer class="site-footer">
     <div class="footer-container">
-      <p>&copy; 2026 Faiz Yusuf Elriki. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+      <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
     </div>
   </footer>
 
