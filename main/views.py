@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 from main.models import Experience
+from main.models import Skill
 
 
 def show_main(request):
@@ -23,10 +24,22 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
-
 def show_experience(request):
     context = {
         "name": "Faiz",
         "experience_list": Experience.objects.all(),
     }
     return render(request, "experience.html", context)
+
+def show_skill(request):
+    skills = Skill.objects.all().order_by('category', '-proficiency')
+    grouped = {}
+    for code, label in Skill.SKILL_CATEGORIES:
+        items = skills.filter(category=code)
+        if items.exists():
+            grouped[label] = items
+    context = {
+        "name": "Faiz",
+        "skill_groups": grouped,
+    }
+    return render(request, "skill.html", context)

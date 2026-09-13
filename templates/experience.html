@@ -15,9 +15,10 @@
   <header class="site-header">
     <div class="nav-container">
       <a href="{% url 'main:show_main' %}" class="brand-logo">{{ name }}<span>.</span></a>
-      <nav>
+      <nav class="nav-menu">
           <a href="{% url 'main:show_main' %}">Profile</a>
           <a href="{% url 'main:show_experience' %}">Experience</a>
+          <a href="{% url 'main:show_skill' %}">Skills</a>
       </nav>
     </div>
   </header>
@@ -26,8 +27,8 @@
     <section class="experience-section" id="experience">
       <div class="section-container">
         <div class="section-header">
-          <p class="section-kicker">Perjalanan saya sejauh ini</p>
-          <h1 class="section-title">Experience</h1>
+          <p class="section-kicker">Leadership & Activities</p>
+          <h1 class="section-title">Organizational Experience</h1>
         </div>
 
         <div class="timeline">
@@ -41,16 +42,17 @@
               <div class="timeline-card">
                 <div class="card-meta">
                   <span class="role-category">{{ experience.get_category_display }}</span>
-                  <span class="role-date">
-                    {% if experience.is_ongoing %}
-                      Sedang berlangsung
-                    {% else %}
-                      Selesai
-                    {% endif %}
-                  </span>
+                  <span class="role-date">{{ experience.date_range_display }}</span>
                 </div>
                 <h2 class="role-title">{{ experience.title }}</h2>
-                <p class="role-desc">{{ experience.description }}</p>
+                {% if experience.organization %}
+                  <p class="org-name">{{ experience.organization }}</p>
+                {% endif %}
+                <ul class="role-desc-list">
+                  {% for point in experience.description_points %}
+                    <li>{{ point }}</li>
+                  {% endfor %}
+                </ul>
               </div>
             </div>
           {% empty %}

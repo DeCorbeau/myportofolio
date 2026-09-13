@@ -15,9 +15,10 @@
   <header class="site-header">
     <div class="nav-container">
       <a href="{% url 'main:show_main' %}" class="brand-logo">{{ name }}<span>.</span></a>
-      <nav>
+      <nav class="nav-menu">
           <a href="{% url 'main:show_main' %}">Profile</a>
           <a href="{% url 'main:show_experience' %}">Experience</a>
+          <a href="{% url 'main:show_skill' %}">Skills</a>
       </nav>
     </div>
   </header>
@@ -71,100 +72,6 @@
           <div class="astro-bubble">Hello, I'm {{ short_name }}!</div>
           <img src="{% static 'img/astro-laptop.png' %}" alt="" class="astro-decor" aria-hidden="true">
         </div>        
-
-      </div>
-    </section>
-
-    <section class="experience-section" id="experience">
-      <div class="section-container">
-        
-        <div class="section-header">
-          <p class="section-kicker">Leadership &amp; Activities</p>
-          <h2 class="section-title">Organizational Experience</h2>
-        </div>
-
-        <div class="timeline">
-          <article class="timeline-item">
-            <div class="timeline-dot dot-zoom">
-              <img src="{% static 'img/logooh26.jpeg' %}" alt="Logo Open House Fasilkom UI 2026">
-            </div>
-            <div class="timeline-card">
-              <div class="card-meta">
-                <span class="role-category">Committee</span>
-                <span class="role-date">Feb 2026 — Present</span>
-              </div>
-              <h3 class="role-title">Person in Charge (PIC) Ambassador Division</h3>
-              <h4 class="org-name">Open House Fasilkom UI 2026</h4>
-              <ul class="role-desc-list">
-                <li>Leading an <em>8-member</em> Ambassador Division (1 PIC, 1 VPIC, 6 staff), holding full ownership of the division's strategic direction and day-to-day operations.</li>
-                <li>Designed the division's work timeline and workflow from the ground up, including selection criteria, interview scoring rubrics, and the recruitment mechanism for both staff and ambassadors, reaching 40+ staff applicants and 160+ for ambassadors applicants.</li>
-                <li>Built the division's core operational infrastructure including MoUs, registration procedures, task guidebooks, and a contingency mechanism for extending recruitment periods, complete with defined triggers and decision flows.</li>
-                <li>Conceptualized and oversaw <em>five ambassador special programs</em> including Welcoming Ambassador, RISTEK Class, Webinar with Alumni, Mentoring 1-on-1, and Farewell Party, each with defined success metrics spanning attendance targets, satisfaction scores, and material comprehension rates.</li>
-                <li>Serve as the division's point of accountability, coordinating cross-divisional collaboration and reporting to the Core Program Manager.</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="timeline-item">
-            <div class="timeline-dot">
-              <img src="{% static 'img/compfest18.jpg' %}" alt="Logo COMPFEST 18">
-            </div>
-            <div class="timeline-card">
-              <div class="card-meta">
-                <span class="role-category">Committee</span>
-                <span class="role-date">Mar 2026 — Present</span>
-              </div>
-              <h3 class="role-title">HR Staff of IT Development</h3>
-              <h4 class="org-name">COMPFEST 18</h4>
-              <ul class="role-desc-list">
-                <li>Monitor the IT Development team's day-to-day performance and project progress, compiling regular progress recaps for internal reporting and review.</li>
-                <li>Support recruitment for IT Development staff across both the <em>Software Engineering and UI/UX</em> sub-divisions.</li>
-                <li>Foster a positive and cohesive team culture through bonding initiatives and engagement activities, helping maintain a comfortable and motivating work environment.</li>
-                <li>Support core people-operations functions for the division including check-ins, progress tracking, and internal communication to help sustain team cohesion and productivity.</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="timeline-item">
-            <div class="timeline-dot">
-              <img src="{% static 'img/datathon_2026.svg' %}" alt="Logo RISTEK Summer Event Datathon 2026">
-            </div>
-            <div class="timeline-card">
-              <div class="card-meta">
-                <span class="role-category">Internship</span>
-                <span class="role-date">May 2026 — Aug 2026</span>
-              </div>
-              <h3 class="role-title">Event Intern</h3>
-              <h4 class="org-name">RISTEK Summer Event 2026: Datathon 2026</h4>
-              <ul class="role-desc-list">
-                <li>Served as <em>PIC for Workshop 4</em>, a national-scale workshop with 200+ participants, owning the speaker ToR, content alignment, event rundown, MC cue cards, and serving as the primary liaison with speakers throughout.</li>
-                <li>During the high-school registration phase, personally reached out to <em>25 schools and secured engagement from 3 major communities</em> as part of the team's broader outreach of 47 schools and 19 communities, helping drive a combined <em>1,200+ registrants</em> across university and high-school levels.</li>
-                <li>Served as <em>VPIC for Final Day</em>, the competition's <em>300+-attendee</em> culminating event, handling manpower allocation, the day's rundown and cue cards (finalist pitching through partner workshops with Glair AI and GoPay), and the logistics procurement list.</li>
-                <li>Worked as on-site field coordinator at the main auditorium stage on event day, overseeing run-of-show execution, stakeholder seating, live-report coverage, real-time cue card adjustments, and registration flow.</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="timeline-item">
-            <div class="timeline-dot dot-zoom">
-              <img src="{% static 'img/logooh25.jpeg' %}" alt="Logo Open House Fasilkom UI 2025">
-            </div>
-            <div class="timeline-card">
-              <div class="card-meta">
-                <span class="role-category">Committee</span>
-                <span class="role-date">Aug 2025 — Dec 2025</span>
-              </div>
-              <h3 class="role-title">Ambassador Division Staff</h3>
-              <h4 class="org-name">Open House Fasilkom UI 2025</h4>
-              <ul class="role-desc-list">
-                <li>Served as <em>PIC for RISTEK Class</em>, an exclusive ambassador benefit program themed "Innovating Ideas: From Technology Concepts to Real-World Solutions," managing the full pipeline end-to-end including speaker ToR, event rundown, pre-event assignments, MC cue cards, presentation materials, and speaker appreciation certificates.</li>
-                <li>Served as <em>VPIC for Mentoring 1-on-1</em>, a program pairing ambassadors with student mentors to build their knowledge of Open House and the Faculty of Computer Science; owned the rundown, MC cue cards, and mentor guidebook, and personally recruited <em>approximately 15 of the 20 required mentors within 2-3 days</em>.</li>
-                <li>Acted as cross-divisional liaison with Business Development (ensuring incentives and merchandise reached speakers) and Digital Engagement & Collaboration (ensuring consistent live-report coverage across all special programs).</li>
-                <li>Mentored one of three ambassador teams that collectively drove <em>approximately 40% (~195 people) of total main event attendance</em>, earning the division formal recognition for the achievement.</li>
-              </ul>
-            </div>
-          </article>
-        </div>
 
       </div>
     </section>
