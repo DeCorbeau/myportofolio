@@ -491,6 +491,128 @@ body {
     padding: 24px 0;
 }
 
+.skill-section {
+    padding: 60px 24px 80px;
+}
+
+.skill-category-group {
+    margin-bottom: 16px;
+}
+
+.skill-category-summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--accent-purple);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit   
+}
+
+.skill-category-summary::-webkit-details-marker {
+    display: none;
+}
+
+.skill-category-summary::before {
+    content: "▸ ";
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.skill-category-group.open .skill-category-summary::before {
+    transform: rotate(90deg);
+}
+
+.skill-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+    overflow: hidden;
+}
+
+.skill-category-group.open .skill-collapse {
+    grid-template-rows: 1fr;
+}
+
+.skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 8px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.skill-card {
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.skill-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-hover);
+}
+
+.skill-card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.proficiency-bar {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.bar-segment {
+    height: 6px;
+    flex: 1;
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+.bar-segment.filled {
+    background-color: var(--accent-purple);
+}
+
+.proficiency-label {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.skill-impact {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    text-align: justify;
+}
+
+.skill-context {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    font-style: italic;
+    font-weight: bolder;
+    color: rgba(216, 180, 254, 0.6);
+    text-align: justify;
+}
+
 /* =========================================================================
    5. FOOTER
    ========================================================================= */
