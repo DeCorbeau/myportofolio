@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from main.models import Experience
+from main.models import Skill
 
 
 class MainTest(TestCase):
@@ -11,6 +12,15 @@ class MainTest(TestCase):
             title="Asisten Dosen PBP",
             description="Membantu mahasiswa memahami pengembangan web.",
             category="part-time",
+            started_at="2007-09-01",
+        )
+        self.experience.refresh_from_db()
+        self.skill = Skill.objects.create(
+            name="People Management",
+            category='leadership',
+            proficiency=4,
+            impact='gugugaga',
+            context='babycorp'
         )
 
     def test_main_url_is_accessible(self):
@@ -39,7 +49,7 @@ class MainTest(TestCase):
         self.assertContains(response, self.experience.title)
         self.assertContains(response, self.experience.description)
         self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
+        self.assertContains(response, "Present")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
     def test_empty_experience_page(self):
@@ -54,5 +64,27 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
+        self.assertContains(response, self.experience.date_range_display)
+        self.assertNotContains(response, "Present")
+
+    def test_skill_model(self):
+        self.assertEqual(str(self.skill), "People Management")
+        self.assertEqual(self.skill.category, "leadership")
+        self.assertEqual(self.skill.proficiency, 4)
+
+    def test_skill_page(self):
+        response = self.client.get(reverse("main:show_skill"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "skill.html")
+        self.assertContains(response, self.skill.name)
+        self.assertContains(response, "Leadership &amp; Management")
+        self.assertContains(response, "Expert")
+        self.assertContains(response, "gugugaga")
+        self.assertContains(response, f'href="{reverse("main:show_main")}"')
+
+    def test_empty_skill_page(self):
+        Skill.objects.all().delete()
+        response = self.client.get(reverse("main:show_skill"))
+
+        self.assertContains(response, "Belum ada skill yang ditambahkan.")
