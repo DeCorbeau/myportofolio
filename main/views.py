@@ -2,6 +2,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from main.forms import SkillForm
 from main.models import Experience, Skill
+from django.core import serializers
+from django.http import HttpResponse
 
 def show_main(request):
     context = {
@@ -54,3 +56,13 @@ def create_skill(request):
         "form": form,
     }
     return render(request, "skill_form.html", context)
+
+def get_skill_json(request):
+    name_query = request.GET.get("name", "").strip()
+    skills = Skill.objects.all()
+
+    if name_query:
+        skills = skills.filter(name__icontains=name_query)
+
+    skills_json = serializers.serialize("json", skills)
+    return HttpResponse(skills_json, content_type="application/json")
