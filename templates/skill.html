@@ -1,28 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% block meta %}
   <title>Skills - {{ name }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+{% endblock meta %}
 
-  <header class="site-header">
-    <div class="nav-container">
-      <a href="{% url 'main:show_main' %}" class="brand-logo">{{ name }}<span>.</span></a>
-      <nav class="nav-menu">
-          <a href="{% url 'main:show_main' %}">Profile</a>
-          <a href="{% url 'main:show_experience' %}">Experience</a>
-          <a href="{% url 'main:show_skill' %}">Skills</a>
-      </nav>
-    </div>
-  </header>
-
+{% block content %}
     <main>
     <section class="skill-section" id="skill">
         <div class="section-container">
@@ -63,18 +46,12 @@
     </section>
     </main>
 
-  <footer class="site-footer">
-    <div class="footer-container">
-      <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
-    </div>
-  </footer>
-<script>
-    document.querySelectorAll('.skill-category-summary').forEach(function(button) {
-        button.addEventListener('click', function() {
-            const saver = button.closest('.skill-category-group')
-            saver.classList.toggle('open')
+    <script>
+        document.querySelectorAll('.skill-category-summary').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const saver = button.closest('.skill-category-group')
+                saver.classList.toggle('open')
+            });
         });
-    });
-</script>  
-</body>
-</html>
+    </script>  
+{% endblock content %}
