@@ -33,15 +33,25 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 def show_skill(request):
-    skills = Skill.objects.all().order_by('category', '-proficiency')
+    json_response = get_skill_json(request)
+    skills = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    skills = [skill.object for skill in skills]
+
+    name_query = request.GET.get("name", "").strip()
+
     grouped = {}
     for code, label in Skill.SKILL_CATEGORIES:
-        items = skills.filter(category=code)
-        if items.exists():
+        items = [s for s in skills if s.category == code]
+        if items:
             grouped[label] = items
+
     context = {
         "name": "Faiz",
         "skill_groups": grouped,
+        "name_query": name_query,
     }
     return render(request, "skill.html", context)
 
