@@ -1,8 +1,7 @@
-from django.shortcuts import render
-
-from main.models import Experience
-from main.models import Skill
-
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from main.forms import SkillForm
+from main.models import Experience, Skill
 
 def show_main(request):
     context = {
@@ -43,3 +42,15 @@ def show_skill(request):
         "skill_groups": grouped,
     }
     return render(request, "skill.html", context)
+
+def create_skill(request):
+    form = SkillForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Skill baru berhasil ditambahkan!")
+        return redirect("main:show_skill")
+    context = {
+        "name": "Faiz",
+        "form": form,
+    }
+    return render(request, "skill_form.html", context)

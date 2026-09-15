@@ -36,7 +36,7 @@ class SkillForm(ModelForm):
             ),
             "context": TextInput(
                 attrs={
-                    "placeholder": "PIC, Ambassador Division — Open House 2026",
+                    "placeholder": "PIC of Ambassador Division — Open House Fasilkom UI 2026",
                 }
             ),
         }
