@@ -27,7 +27,7 @@ def show_main(request):
 
 def show_experience(request):
     context = {
-        "name": "Faiz",
+        "short_name": "Faiz",
         "experience_list": Experience.objects.all(),
     }
     return render(request, "experience.html", context)
@@ -49,7 +49,7 @@ def show_skill(request):
             grouped[label] = items
 
     context = {
-        "name": "Faiz",
+        "short_name": "Faiz",
         "skill_groups": grouped,
         "name_query": name_query,
     }
