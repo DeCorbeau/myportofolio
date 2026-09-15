@@ -9,9 +9,14 @@
     <main>
     <section class="skill-section" id="skill">
         <div class="section-container">
-        <div class="section-header">
-            <p class="section-kicker">What I Do</p>
-            <h1 class="section-title">Skills</h1>
+        <div class="section-header skill-header">
+            <div>
+                <p class="section-kicker">What I Do</p>
+                <h1 class="section-title">Skills</h1>
+            </div>
+            <a href="{% url 'main:create_skill' %}" class="button">
+                <span aria-hidden="true">+</span> Tambah Skill
+            </a>
         </div>
 
         {% for category, skills in skill_groups.items %}
@@ -34,6 +39,7 @@
                         <p class="proficiency-label">{{ skill.get_proficiency_display }}</p>
                         {% if skill.impact %}<p class="skill-impact">{{ skill.impact }}</p>{% endif %}
                         {% if skill.context %}<p class="skill-context">{{ skill.context }}</p>{% endif %}
+                        {% include "components/skill_delete_modal.html" with skill=skill %}
                     </article>
                     {% endfor %}
                 </div>
