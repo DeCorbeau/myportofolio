@@ -137,3 +137,54 @@ Berikut 3 contoh interaksi saya bersama AI selama proses pengerjaan:
    * Tujuan: Menampilkan skill dalam bentuk accordion per kategori yang dapat dibuka-tutup dengan animasi yang halus.
    * Respon AI: Menjelaskan pendekatan CSS murni menggunakan grid-template-rows, tetapi setelah diuji coba pendekatan ini menghasilkan animasi yang tidak konsisten pada klik pertama akibat konflik dengan perilaku bawaan elemen details. AI kemudian menjelaskan konsep penggunaan sedikit JavaScript sebagai solusi yang lebih stabil dan membimbing saya menuliskan sendiri kode querySelectorAll, addEventListener, dan classList.toggle secara bertahap.
    * Tindakan Saya: Saya sempat khawatir penggunaan JavaScript melanggar ketentuan tugas sehingga saya konfirmasi terlebih dahulu ke AI dan memeriksa ulang rubrik penilaian sebelum melanjutkan. Saya juga menulis sendiri setiap baris kode JavaScript tersebut.
+
+### Tugas 3
+
+1. **Jelaskan mengapa kita menggunakan ModelForm pada Django alih-alih membuat form HTML secara manual. Selain itu, jelaskan pula mengapa kita diwajibkan menambahkan {% csrf_token %} pada form tersebut!**
+
+   ModelForm memungkinkan form dibuat langsung dari model sehingga field, tipe data, dan aturan validasi yang sudah didefinisikan pada model tidak perlu ditulis ulang di HTML. Pada SkillForm, misalnya, field category dan proficiency otomatis menjadi dropdown dengan pilihan yang diambil dari choices pada model Skill dan nilai di luar pilihan tersebut akan ditolak oleh is_valid(). ModelForm juga menyediakan save() untuk menyimpan data serta parameter instance untuk mengisi form dengan data lama. Parameter ini saya gunakan pada update_skill sehingga satu template skill_form.html dapat melayani Create maupun Update.
+
+   Adapun {% csrf_token %} wajib ditambahkan untuk melindungi aplikasi dari serangan CSRF (Cross-Site Request Forgery). Tanpa token, situs lain dapat membuat browser pengguna yang sedang login mengirim permintaan POST ke aplikasi kita, misalnya untuk menghapus atau mengubah skill, dengan membawa cookie sesi pengguna tersebut. Dengan token unik yang disisipkan pada setiap form, Django dapat memeriksa bahwa permintaan POST benar-benar berasal dari form yang ditampilkan oleh aplikasi kita, dan permintaan tanpa token yang valid ditolak dengan error 403. Karena itu, tombol "Yes, Delete" pada modal konfirmasi juga saya bungkus dengan form yang memuat csrf_token.
+
+2. **Pada Tutorial 03, kita membahas format data JSON dan XML. Mengapa JSON lebih disukai dalam pengembangan aplikasi web modern dibandingkan XML?**
+
+   JSON lebih disukai karena lebih ringkas dan lebih mudah diolah. JSON tidak membutuhkan tag pembuka dan penutup untuk setiap data seperti XML sehingga ukuran data yang dikirim lebih kecil dan proses parsing lebih cepat. Strukturnya yang berupa object dan array juga setara langsung dengan tipe data pada JavaScript sehingga di sisi klien data dapat digunakan dengan JSON.parse() tanpa parser tambahan, sedangkan XML harus ditelusuri sebagai struktur pohon dokumen. Selain itu, JSON lebih mudah dibaca manusia, dan hasil serializer Django yang berisi model, pk, dan fields pada endpoint get_skill_json terlihat jauh lebih sederhana dibanding padanannya dalam XML. Karena alasan tersebut, JSON menjadi format standar pada kebanyakan API web modern, sementara XML lebih cocok untuk dokumen dengan skema yang ketat.
+
+3. **Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?**
+
+   Ketika pengguna membuka /api/skill/, permintaan tersebut diterima oleh urls.py proyek dan diteruskan ke main/urls.py, yang memetakan path api/skill/ ke fungsi view get_skill_json. View ini mengambil objek Skill dari database melalui Skill.objects.all() (dan memfilternya dengan name__icontains apabila ada query name), lalu memanggil serializers.serialize("json", skills) untuk mengubah QuerySet menjadi string JSON. String tersebut dikembalikan sebagai HttpResponse dengan content_type application/json. Pada halaman /skill/, view show_skill memanggil get_skill_json, mendeserialisasi kembali JSON tersebut menjadi objek Skill, mengelompokkannya berdasarkan kategori, dan mengirimkannya ke template skill.html untuk dirender. Alur yang sama saya terapkan pada get_experience_json untuk data Experience.
+
+   Serialization diperlukan karena HTTP hanya mengirimkan teks atau byte, bukan objek Python. QuerySet dan instance model tidak dapat dikirim langsung sehingga harus diubah terlebih dahulu ke format yang dapat dikirim dan dibaca oleh klien mana pun. Serializer Django juga menangani tipe data seperti UUID dan tanggal yang tidak dapat dikonversi ke JSON secara langsung sehingga kita tidak perlu menulis konversi tersebut sendiri.
+
+**AI Disclosure — Tugas 3**
+
+Dalam pengerjaan Tugas Individu 3 ini, saya memanfaatkan AI, yaitu Claude, sepanjang proses penerapan mekanisme Form & Data Delivery pada bagian Skills, mulai dari refactoring template dengan extend hingga penambahan fitur Update dan penyajian data dalam format JSON. AI membantu saya memahami alur ModelForm, view, dan serialization lebih dalam melalui penerapan pada kasus nyata, sekaligus membimbing saya mengerjakan tugas ini langkah demi langkah.
+
+Secara garis besar, hal-hal yang saya lakukan dengan AI pada codebase ini meliputi:
+- Memetakan checklist Tugas 3 terhadap hasil Tutorial 03 untuk menentukan bagian yang masih kurang, yaitu fitur Update.
+- Debugging variabel short_name yang tidak muncul pada navbar dan title di halaman form.
+- Membantu menentukan terjemahan label form, placeholder, dan teks antarmuka dari bahasa Indonesia ke bahasa Inggris yang sesuai konteks.
+- Menyusun urutan commit yang granular menggunakan git add -p berdasarkan output git diff.
+- Meminta bantuan wording README.md
+
+Sama seperti pada Tugas 2, saya tidak pernah menyalin dan menempelkan kode yang diberikan AI begitu saja. Pada tugas ini, pendekatan yang digunakan AI juga lebih banyak berupa bimbingan bertahap. AI menjelaskan konsep atau menunjukkan letak kesalahan, kemudian saya menulis sendiri perbaikannya sebelum diperiksa ulang.
+
+Berikut 3 contoh interaksi saya bersama AI selama proses pengerjaan:
+
+1. **Memetakan Checklist Tugas 3**
+   * Prompt: "iyaa boleh ayo langsung kita mulai yaa. tolong sebelum mulai pastikan kita pasti memenuhi ketentuan tugas 3 ya."
+   * Tujuan: Memastikan seluruh butir checklist tugas sudah terpenuhi atau teridentifikasi sebelum mulai menulis kode.
+   * Respon AI: Memetakan setiap butir checklist ke fitur yang sudah ada dari Tutorial 03, menyimpulkan bahwa hanya fitur Update yang belum ada, lalu membagi pekerjaan menjadi beberapa langkah (view, routing, template, tombol Edit, endpoint JSON Experience, README).
+   * Tindakan Saya: Saya mengikuti langkah tersebut dan menguji tombol Edit di browser untuk memastikan form terisi data lama dan perubahan tersimpan. Saya juga mencocokkan pemetaan tersebut dengan PDF deskripsi tugas asli.
+
+2. **Debugging short_name yang Tidak Muncul pada Halaman Form**
+   * Prompt: "kenapa gak munculin nama di navbar dan title web nya ya"
+   * Tujuan: Memahami mengapa nama tidak tampil di navbar dan title pada halaman Add dan Edit Skill.
+   * Respon AI: Mengidentifikasi bahwa create_skill dan update_skill hanya mengirim "name" pada context dan tidak mengirim "short_name". Setelah saya menambahkannya, title berhasil tampil tetapi navbar belum. AI kemudian menyebutkan beberapa kemungkinan penyebab.
+   * Tindakan Saya: Saya menambahkan short_name pada kedua view, lalu menelusuri sendiri masalah navbar sampai teratasi.
+
+3. **Menyusun Commit yang Granular**
+   * Prompt: "emang kamu tahu berubah di mana"
+   * Tujuan: Memisahkan perubahan yang belum di-commit menjadi commit-commit kecil yang deskriptif.
+   * Respon AI: Meminta output git diff. Setelah saya tempelkan, AI menunjukkan hunk mana yang dijawab y atau n pada git add -p dan urutan commit yang aman.
+   * Tindakan Saya: Saya menjalankan git diff, menyelesaikan kendala pager, mengedit sementara import di urls.py agar dua fitur dapat dipisah, lalu menjalankan git add -p. Hasilnya enam commit dengan format conventional commits, dan git status menunjukkan working tree bersih.
