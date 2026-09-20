@@ -63,6 +63,7 @@ def create_skill(request):
         return redirect("main:show_skill")
     context = {
         "name": "Faiz",
+        "short_name": "Faiz",
         "form": form,
     }
     return render(request, "skill_form.html", context)
