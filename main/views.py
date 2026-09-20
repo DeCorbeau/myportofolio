@@ -32,6 +32,11 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
+def get_experience_json(request):
+    experiences = Experience.objects.all()
+    experiences_json = serializers.serialize("json", experiences)
+    return HttpResponse(experiences_json, content_type="application/json")
+
 def show_skill(request):
     json_response = get_skill_json(request)
     skills = serializers.deserialize(
