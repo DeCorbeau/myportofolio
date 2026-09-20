@@ -14,11 +14,11 @@ class SkillForm(ModelForm):
             "context",
         ]
         labels = {
-            "name": "Nama Skill",
-            "category": "Kategori",
-            "proficiency": "Tingkat Penguasaan",
-            "impact": "Dampak/Pencapaian",
-            "context": "Konteks (dari pengalaman mana)",
+            "name": "Skill Name",
+            "category": "Category",
+            "proficiency": "Proficiency Level",
+            "impact": "Impact/Achievement",
+            "context": "Context (from which experience)",
         }
         widgets = {
             "name": TextInput(
@@ -31,7 +31,7 @@ class SkillForm(ModelForm):
             "proficiency": Select(),
             "impact": TextInput(
                 attrs={
-                    "placeholder": "Memimpin tim 8 orang mencapai target rekrutmen",
+                    "placeholder": "Led a team of 8 to hit the division target",
                 }
             ),
             "context": TextInput(
