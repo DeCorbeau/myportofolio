@@ -2,6 +2,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from main.forms import SkillForm
 from main.models import Experience, Skill
 from django.core import serializers
@@ -67,6 +69,7 @@ def show_skill(request):
     }
     return render(request, "skill.html", context)
 
+@login_required(login_url="/login/")
 def create_skill(request):
     form = SkillForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -90,6 +93,7 @@ def get_skill_json(request):
     skills_json = serializers.serialize("json", skills)
     return HttpResponse(skills_json, content_type="application/json")
 
+@login_required(login_url="/login/")
 def delete_skill(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
     if request.method == "POST":
@@ -98,6 +102,7 @@ def delete_skill(request, skill_id):
         return redirect("main:show_skill")
     return redirect("main:show_skill")
 
+@login_required(login_url="/login/")
 def update_skill(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
     form = SkillForm(request.POST or None, instance=skill)
