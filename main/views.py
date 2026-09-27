@@ -4,7 +4,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from main.forms import SkillForm
+from main.forms import SkillForm, ExperienceForm
 from main.models import Experience, Skill
 from django.core import serializers
 from django.http import HttpResponse
@@ -40,6 +40,53 @@ def show_experience(request):
         "experience_list": Experience.objects.all(),
     }
     return render(request, "experience.html", context)
+
+@login_required(login_url="/login/")
+def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    form = ExperienceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Experience added successfully!")
+        return redirect("main:show_experience")
+    context = {
+        "name": "Faiz Yusuf Elriki",
+        "short_name": "Faiz",
+        "form": form,
+    }
+    return render(request, "experience_form.html", context)
+
+
+@login_required(login_url="/login/")
+def update_experience(request, experience_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    experience = get_object_or_404(Experience, pk=experience_id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Experience updated successfully!")
+        return redirect("main:show_experience")
+    context = {
+        "name": "Faiz Yusuf Elriki",
+        "short_name": "Faiz",
+        "form": form,
+        "experience": experience,
+    }
+    return render(request, "experience_form.html", context)
+
+
+@login_required(login_url="/login/")
+def delete_experience(request, experience_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    experience = get_object_or_404(Experience, pk=experience_id)
+    if request.method == "POST":
+        experience.delete()
+        messages.success(request, "Experience deleted successfully!")
+        return redirect("main:show_experience")
+    return redirect("main:show_experience")
 
 def get_experience_json(request):
     experiences = Experience.objects.all()
