@@ -1,6 +1,6 @@
-from django.forms import ModelForm, TextInput, Textarea, Select, NumberInput
+from django.forms import ModelForm, TextInput, Textarea, Select, URLInput, DateInput
 
-from main.models import Skill
+from main.models import Skill, Experience
 
 
 class SkillForm(ModelForm):
@@ -39,4 +39,35 @@ class SkillForm(ModelForm):
                     "placeholder": "PIC of Ambassador Division — Open House Fasilkom UI 2026",
                 }
             ),
+        }
+
+class ExperienceForm(ModelForm):
+    class Meta:
+        model = Experience
+        fields = [
+            "title",
+            "organization",
+            "description",
+            "category",
+            "thumbnail",
+            "started_at",
+            "ended_at",
+        ]
+        labels = {
+            "title": "Position / Role",
+            "organization": "Organization",
+            "description": "Description (one bullet point per line)",
+            "category": "Category",
+            "thumbnail": "Logo / Thumbnail URL",
+            "started_at": "Start Date",
+            "ended_at": "End Date (leave blank if ongoing)",
+        }
+        widgets = {
+            "title": TextInput(attrs={"placeholder": "Person in Charge (PIC) of Ambassador Division"}),
+            "organization": TextInput(attrs={"placeholder": "Open House Fasilkom UI 2026"}),
+            "description": Textarea(attrs={"placeholder": "One achievement per line...", "rows": 5}),
+            "category": Select(),
+            "thumbnail": URLInput(attrs={"placeholder": "https://..."}),
+            "started_at": DateInput(attrs={"type": "date"}),
+            "ended_at": DateInput(attrs={"type": "date"}),
         }
