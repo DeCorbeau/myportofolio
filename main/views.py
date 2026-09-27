@@ -46,6 +46,16 @@ def get_experience_json(request):
     experiences_json = serializers.serialize("json", experiences)
     return HttpResponse(experiences_json, content_type="application/json")
 
+@login_required(login_url="/login/")
+def toggle_like(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    if request.method == "POST":
+        if request.user in experience.liked_by.all():
+            experience.liked_by.remove(request.user)
+        else:
+            experience.liked_by.add(request.user)
+    return redirect("main:show_experience")
+
 def show_skill(request):
     json_response = get_skill_json(request)
     skills = serializers.deserialize(
@@ -123,6 +133,16 @@ def update_skill(request, skill_id):
         "skill": skill,
     }
     return render(request, "skill_form.html", context)
+
+@login_required(login_url="/login/")
+def toggle_endorse(request, skill_id):
+    skill = get_object_or_404(Skill, pk=skill_id)
+    if request.method == "POST":
+        if request.user in skill.endorsed_by.all():
+            skill.endorsed_by.remove(request.user)
+        else:
+            skill.endorsed_by.add(request.user)
+    return redirect("main:show_skill")
 
 def register(request):
     form = UserCreationForm(request.POST or None)
