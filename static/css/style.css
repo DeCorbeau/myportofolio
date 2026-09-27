@@ -731,6 +731,12 @@ body {
     margin-top: 0.35rem;
 }
 
+.form-help {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+}
+
 .button {
     display: inline-block;
     height: fit-content;
