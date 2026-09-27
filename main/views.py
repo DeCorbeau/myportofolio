@@ -1,11 +1,17 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from main.forms import SkillForm
 from main.models import Experience, Skill
 from django.core import serializers
 from django.http import HttpResponse
+import datetime
 
 def show_main(request):
+    last_login = request.COOKIES.get(
+        "last_login", "No login session yet / cookie not found"
+    )
     context = {
         "name": "Faiz Yusuf Elriki",
         "short_name": "Faiz",
@@ -22,6 +28,7 @@ def show_main(request):
             "positively wherever I go while continuously improving myself "
             "along the way."
         ),
+        "last_login": last_login,
     }
     return render(request, "index.html", context)
 
@@ -121,6 +128,7 @@ def login_user(request):
     if request.method == "POST" and form.is_valid():
         login(request, form.get_user())
         response = redirect("main:show_main")
+        response.set_cookie("last_login", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         return response
     context = {"form": form,
                "short_name": "Faiz"}
@@ -129,4 +137,5 @@ def login_user(request):
 def logout_user(request):
     logout(request)
     response =  redirect("main:show_main")
+    response.delete_cookie("last_login")
     return response
