@@ -774,6 +774,37 @@ body {
     background: #dc2626;
 }
 
+.endorse-form,
+.like-form {
+    display: inline-block;
+    margin-top: 0.75rem;
+}
+
+.button-endorse,
+.button-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.button-endorse.is-endorsed,
+.button-like.is-liked {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: #ffffff;
+}
+
+.endorse-count,
+.like-count {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 0.8rem;
+}
+
 .skill-delete-modal {
     display: none;
     position: fixed;

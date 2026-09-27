@@ -36,6 +36,16 @@
                     <li>{{ point }}</li>
                   {% endfor %}
                 </ul>
+                <form method="post" action="{% url 'main:toggle_like' experience.id %}" class="like-form">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="button button-like{% if user in experience.liked_by.all %} is-liked{% endif %}"
+                            title="{% if experience.liked_by.all %}Liked by {{ experience.liked_by.all|join:', ' }}{% else %}Be the first to like{% endif %}">
+                        <span aria-hidden="true">♥</span>
+                        {% if user in experience.liked_by.all %}Unlike{% else %}Like{% endif %}
+                        <span class="like-count">{{ experience.liked_by.count }}</span>
+                    </button>
+                </form>                
               </div>
             </div>
           {% empty %}

@@ -41,6 +41,16 @@
                         <p class="proficiency-label">{{ skill.get_proficiency_display }}</p>
                         {% if skill.impact %}<p class="skill-impact">{{ skill.impact }}</p>{% endif %}
                         {% if skill.context %}<p class="skill-context">{{ skill.context }}</p>{% endif %}
+                        <form method="post" action="{% url 'main:toggle_endorse' skill.id %}" class="endorse-form">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="button button-endorse{% if user in skill.endorsed_by.all %} is-endorsed{% endif %}"
+                                    title="{% if skill.endorsed_by.all %}Endorsed by {{ skill.endorsed_by.all|join:', ' }}{% else %}Be the first to endorse{% endif %}">
+                                <span aria-hidden="true">★</span>
+                                {% if user in skill.endorsed_by.all %}Remove Endorsement{% else %}Endorse{% endif %}
+                                <span class="endorse-count">{{ skill.endorsed_by.count }}</span>
+                            </button>
+                        </form>                        
                         {% if user.is_superuser %}
                         <div class="skill-actions">
                             <a href="{% url 'main:update_skill' skill.id %}" class="button button-secondary">Edit</a>
