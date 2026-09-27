@@ -1,6 +1,6 @@
 from django.urls import path
 
-from main.views import show_main, show_experience, show_skill, create_skill, get_skill_json, delete_skill, update_skill, get_experience_json
+from main.views import show_main, show_experience, show_skill, create_skill, get_skill_json, delete_skill, update_skill, get_experience_json, register, login_user, logout_user
 
 app_name = "main"
 
@@ -13,4 +13,7 @@ urlpatterns = [
     path("skill/<uuid:skill_id>/edit/", update_skill, name="update_skill"),
     path("api/skill/", get_skill_json, name="get_skill_json"),
     path("skill/<uuid:skill_id>/delete/", delete_skill, name="delete_skill"),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
 ]
