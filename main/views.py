@@ -71,6 +71,8 @@ def show_skill(request):
 
 @login_required(login_url="/login/")
 def create_skill(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied    
     form = SkillForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -95,6 +97,8 @@ def get_skill_json(request):
 
 @login_required(login_url="/login/")
 def delete_skill(request, skill_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied    
     skill = get_object_or_404(Skill, pk=skill_id)
     if request.method == "POST":
         skill.delete()
@@ -104,6 +108,8 @@ def delete_skill(request, skill_id):
 
 @login_required(login_url="/login/")
 def update_skill(request, skill_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied    
     skill = get_object_or_404(Skill, pk=skill_id)
     form = SkillForm(request.POST or None, instance=skill)
     if request.method == "POST" and form.is_valid():
