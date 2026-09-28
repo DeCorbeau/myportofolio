@@ -9,9 +9,16 @@
   <main>
     <section class="experience-section" id="experience">
       <div class="section-container">
-        <div class="section-header">
-          <p class="section-kicker">Leadership & Activities</p>
-          <h1 class="section-title">Organizational Experience</h1>
+        <div class="section-header skill-header">
+          <div>
+            <p class="section-kicker">Leadership & Activities</p>
+            <h1 class="section-title">Organizational Experience</h1>
+          </div>
+          {% if user.is_superuser %}
+          <a href="{% url 'main:create_experience' %}" class="button">
+            <span aria-hidden="true">+</span> Add Experience
+          </a>
+          {% endif %}
         </div>
 
         <div class="timeline">
@@ -45,7 +52,13 @@
                         {% if user in experience.liked_by.all %}Unlike{% else %}Like{% endif %}
                         <span class="like-count">{{ experience.liked_by.count }}</span>
                     </button>
-                </form>                
+                </form>
+                {% if user.is_superuser %}
+                <div class="skill-actions">
+                  <a href="{% url 'main:update_experience' experience.id %}" class="button button-secondary">Edit</a>
+                </div>
+                {% include "components/experience_delete_modal.html" with experience=experience %}
+                {% endif %}                
               </div>
             </div>
           {% empty %}
