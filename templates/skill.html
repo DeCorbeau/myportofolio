@@ -51,10 +51,12 @@
                                 <span class="endorse-count">{{ skill.endorsed_by.count }}</span>
                             </button>
                         </form>                        
-                        {% if user.is_superuser %}
+                        {% if perms.main.change_skill %}
                         <div class="skill-actions">
                             <a href="{% url 'main:update_skill' skill.id %}" class="button button-secondary">Edit</a>
                         </div>
+                        {% endif %}
+                        {% if user.is_superuser %}
                         {% include "components/skill_delete_modal.html" with skill=skill %}
                         {% endif %}
                     </article>

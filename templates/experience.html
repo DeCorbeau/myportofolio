@@ -53,10 +53,12 @@
                         <span class="like-count">{{ experience.liked_by.count }}</span>
                     </button>
                 </form>
-                {% if user.is_superuser %}
+                {% if perms.main.change_experience %}
                 <div class="skill-actions">
                   <a href="{% url 'main:update_experience' experience.id %}" class="button button-secondary">Edit</a>
                 </div>
+                {% endif %}
+                {% if user.is_superuser %}
                 {% include "components/experience_delete_modal.html" with experience=experience %}
                 {% endif %}                
               </div>
