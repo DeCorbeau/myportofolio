@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-
+from django.contrib.auth.models import Group, Permission, User
 from main.models import Experience
 from main.models import Skill
 
@@ -88,3 +88,48 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_skill"))
 
         self.assertContains(response, "Belum ada skill yang ditambahkan.")
+
+class RolePermissionTest(TestCase):
+    def setUp(self):
+        self.skill = Skill.objects.create(
+            name="Test Skill", category="technical", proficiency=1
+        )
+        self.regular = User.objects.create_user("regular", password="pass12345")
+        self.editor = User.objects.create_user("editor", password="pass12345")
+        self.owner = User.objects.create_superuser("owner", password="pass12345")
+
+        editor_group = Group.objects.create(name="Editor")
+        editor_group.permissions.add(Permission.objects.get(codename="change_skill"))
+        self.editor.groups.add(editor_group)
+
+    def test_anonymous_is_redirected_to_login(self):
+        response = self.client.get(reverse("main:create_skill"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_regular_user_gets_403_on_edit(self):
+        self.client.login(username="regular", password="pass12345")
+        response = self.client.get(reverse("main:update_skill", args=[self.skill.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_editor_can_edit_but_not_create_or_delete(self):
+        self.client.login(username="editor", password="pass12345")
+        edit = self.client.get(reverse("main:update_skill", args=[self.skill.id]))
+        create = self.client.get(reverse("main:create_skill"))
+        delete = self.client.post(reverse("main:delete_skill", args=[self.skill.id]))
+        self.assertEqual(edit.status_code, 200)
+        self.assertEqual(create.status_code, 403)
+        self.assertEqual(delete.status_code, 403)
+
+    def test_superuser_can_create(self):
+        self.client.login(username="owner", password="pass12345")
+        response = self.client.get(reverse("main:create_skill"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_endorse_toggles_on_and_off(self):
+        self.client.login(username="regular", password="pass12345")
+        url = reverse("main:toggle_endorse", args=[self.skill.id])
+        self.client.post(url)
+        self.assertEqual(self.skill.endorsed_by.count(), 1)
+        self.client.post(url)
+        self.assertEqual(self.skill.endorsed_by.count(), 0)    
