@@ -8,7 +8,7 @@ Kelas : PBP A
 
 Repositori portofolio website pribadi yang dibangun bertahap untuk memenuhi tugas individu mata kuliah Pemrograman Berbasis Platform (PBP) sepanjang semester ini.
 
-Halaman portofolio ini berisi dua section utama:
+Halaman portofolio ini berisi tiga section utama:
 - **About Me**: perkenalan diri dengan foto, bio, dan tautan sosial.
 - **Organizational Experience**: timeline pengalaman kepanitiaan/organisasi dalam format kartu interaktif.
 - **Skill**: penjelasan keahlian-keahlian yang saya miliki berupa nama keahlian, kategori keahlian, pengukur keahliannya, dampak dari keahlian tersebut, dan di mana saya mendapatkan atau mengimplementasikan keahlian tersebut.
@@ -188,3 +188,40 @@ Berikut 3 contoh interaksi saya bersama AI selama proses pengerjaan:
    * Tujuan: Memisahkan perubahan yang belum di-commit menjadi commit-commit kecil yang deskriptif.
    * Respon AI: Meminta output git diff. Setelah saya tempelkan, AI menunjukkan hunk mana yang dijawab y atau n pada git add -p dan urutan commit yang aman.
    * Tindakan Saya: Saya menjalankan git diff, menyelesaikan kendala pager, mengedit sementara import di urls.py agar dua fitur dapat dipisah, lalu menjalankan git add -p. Hasilnya enam commit dengan format conventional commits, dan git status menunjukkan working tree bersih.
+
+### Tugas 4
+
+**AI Disclosure — Tugas 4**
+
+Dalam pengerjaan Tutorial 04 dan Tugas Individu 4, saya memanfaatkan AI, yaitu Claude, untuk memahami dan menerapkan autentikasi, session, cookie, serta otorisasi pada website portofolio saya. AI membimbing saya langkah demi langkah, menjelaskan alasan di balik tiap langkah, lalu membantu memeriksa hasilnya setelah saya mengunggah file proyek saya.
+
+Secara garis besar, hal-hal yang saya lakukan dengan AI pada codebase ini meliputi:
+- Membantu saya menerapkan register, login, logout, status login pada navbar, serta cookie `last_login` mengikuti Tutorial 04.
+- Membantu enyesuaikan template tutorial (yang memakai class CSS dan model milik contoh) dengan design system dan model proyek saya sendiri.
+- Menyusun urutan commit yang granular dan memperbaiki kesalahan commit.
+- Menulis test untuk peran dan toggle endorse.
+- Meminta bantuan wording README.md dan AI disclosure ini.
+
+Sama seperti pada Tugas 3, saya tidak pernah menyalin dan menempelkan kode yang diberikan AI begitu saja. Pada tugas ini, pendekatan yang digunakan AI juga lebih banyak berupa bimbingan bertahap. AI menjelaskan konsep atau menunjukkan letak kesalahan, kemudian saya menulis sendiri perbaikannya sebelum diperiksa ulang.
+
+Berikut contoh interaksi saya bersama AI selama proses pengerjaan:
+
+1. **Memulai Tutorial 04**
+   * Prompt: "bantu kerjakan tutorial 4 dong. bimbing aku aku harus apa"
+   * Tujuan: Mendapat urutan pengerjaan Tutorial 04 yang jelas agar tidak tersesat di tengah tiga bagian materi.
+   * Respon AI: Memetakan tutorial menjadi tiga bagian (autentikasi, session dan cookie, otorisasi), lalu membimbing satu bagian sampai selesai sebelum lanjut. AI juga mengingatkan bahwa template tutorial memakai class CSS milik contoh sehingga harus disesuaikan dengan CSS saya.
+   * Tindakan Saya: Mengerjakan tiap langkah di proyek saya, menguji alur register, login, dan logout di browser, lalu lanjut ke bagian berikutnya.
+
+2. **Menyesuaikan Fitur Star dengan Model Proyek Saya**
+   * Prompt: "eh maksud aku bukannya sama ja akayak star? namanya doang gak sih yang beda? emang maksud kamu gimana"
+   * Tujuan: Memastikan fitur endorse dan like memang hanya versi lain dari pola star di tutorial.
+   * Respon AI: Menjelaskan bahwa tutorial memakai model `Project`, sedangkan proyek saya memakai `Skill` dan `Experience` sehingga polanya (satu `ManyToManyField` ke `User` dan view toggle) sama persis dan hanya nama field serta teks UI yang berbeda.
+   * Tindakan Saya: Memilih tetap memakai istilah Endorse untuk Skill dan Like untuk Experience, lalu menerapkan model, migrasi, view, template, dan CSS-nya.
+
+3. **Memperbaiki Kesalahan Commit**
+   * Prompt: Saya menempelkan output `git commit --amend --no-edit` dan `git show --stat HEAD` disertai pertanyaan "gini?"
+   * Tujuan: Memastikan `base.html` masuk ke commit auth yang benar.
+   * Respon AI: Mengenali bahwa instruksi `--amend` sebelumnya salah urut. Perubahan `base.html` malah menempel ke commit `style:` karena saya sudah membuat dua commit setelahnya. AI lalu memberi cara memperbaikinya dengan `git reset --soft`, `git commit --fixup`, dan `git rebase -i --autosquash`.
+   * Tindakan Saya: Menjalankan perbaikan tersebut, lalu memverifikasi lewat `git show --stat` bahwa `base.html` berada di commit `feat(auth): add register, login, and logout views`.
+
+**Keterbatasan AI yang saya temui:** kode pada contoh tutorial tidak otomatis cocok dengan proyek saya (nama model, class CSS, dan teks UI berbahasa Indonesia) sehingga saya harus mengunggah file saya agar AI dapat menyesuaikannya. AI juga membuat kesalahan urutan pada instruksi Git di contoh 4, dan saya baru menyadarinya setelah membaca output terminal sendiri. Karena itu, saya memverifikasi hasil AI dengan menjalankan aplikasi, memeriksa `git show --stat`, dan menjalankan `python manage.py test` (14 test lolos).
