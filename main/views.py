@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 from main.forms import SkillForm, ExperienceForm
 from main.models import Experience, Skill
@@ -59,9 +59,8 @@ def create_experience(request):
 
 
 @login_required(login_url="/login/")
+@permission_required("main.change_skill", raise_exception=True)
 def update_experience(request, experience_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
     if request.method == "POST" and form.is_valid():
@@ -133,7 +132,7 @@ def create_skill(request):
     form = SkillForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Skill baru berhasil ditambahkan!")
+        messages.success(request, "Skill added successfully!")
         return redirect("main:show_skill")
     context = {
         "name": "Faiz",
@@ -159,19 +158,18 @@ def delete_skill(request, skill_id):
     skill = get_object_or_404(Skill, pk=skill_id)
     if request.method == "POST":
         skill.delete()
-        messages.success(request, "Skill berhasil dihapus!")
+        messages.success(request, "Skill deleted successfully!")
         return redirect("main:show_skill")
     return redirect("main:show_skill")
 
 @login_required(login_url="/login/")
-def update_skill(request, skill_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied    
+@permission_required("main.change_skill", raise_exception=True)
+def update_skill(request, skill_id): 
     skill = get_object_or_404(Skill, pk=skill_id)
     form = SkillForm(request.POST or None, instance=skill)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Skill berhasil diperbarui!")
+        messages.success(request, "Skill updated successfully!")
         return redirect("main:show_skill")
     context = {
         "name": "Faiz",
@@ -195,7 +193,7 @@ def register(request):
     form = UserCreationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        messages.success(request, "Account successfully created. Please log in.")
         return redirect("main:login")
     context = {"form": form,
                "short_name": "Faiz"}
