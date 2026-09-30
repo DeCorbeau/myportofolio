@@ -229,6 +229,66 @@
       document.getElementById('add-experience-modal').hidePopover();
     }
 
+    const CREATE_EXPERIENCE_ENDPOINT = "{% url 'main:create_experience_ajax' %}";
+    const experienceForm = document.getElementById('experience-form');
+
+    // Read a cookie value, used to get the CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Send the form to the server with fetch (no page reload)
+    async function addExperience(event) {
+      event.preventDefault();
+      const submitButton = experienceForm.querySelector('button[type="submit"]');
+      submitButton.disabled = true; // prevent double submit
+
+      try {
+        const response = await fetch(CREATE_EXPERIENCE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: new FormData(experienceForm),
+        });
+        // .catch handles non-JSON replies (e.g. an HTML 403 page from CSRF failure)
+        const result = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          experienceForm.reset();
+          closeExperienceModal();
+          showToast('Success', 'New experience added successfully!', 'success');
+          fetchExperiences(searchInput.value.trim());
+        } else {
+          const errorMessages = result.errors
+            ? Object.entries(result.errors).flatMap(([field, errs]) =>
+                errs.map(error => `${field}: ${error.message}`))
+            : [result.message || `Something went wrong (status ${response.status}).`];
+          showToast('Failed to add experience', errorMessages.join(' '), 'error');
+        }
+      } catch (error) {
+        console.error('Error adding experience:', error);
+        showToast('Failed to add experience',
+                  'Could not reach the server. Please try again.', 'error');
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    // The form only exists for superusers, so check before attaching
+    if (experienceForm) {
+      experienceForm.addEventListener('submit', addExperience);
+    }
+
     // Start
     fetchExperiences(searchInput.value.trim());
   </script>

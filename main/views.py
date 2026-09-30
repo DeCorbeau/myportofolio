@@ -9,6 +9,7 @@ from main.models import Experience, Skill
 from django.core import serializers
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 import datetime
 
 def show_main(request):
@@ -59,6 +60,26 @@ def create_experience(request):
         "form": form,
     }
     return render(request, "experience_form.html", context)
+
+
+@require_POST
+def create_experience_ajax(request):
+    # No @login_required here: it would redirect to an HTML login page, which
+    # fetch() follows and JavaScript cannot recognise as a failure. AnonymousUser
+    # has is_superuser == False, so this one check rejects guests and normal users.
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Only the portfolio owner can add experience."},
+            status=403,
+        )
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse(
+            {"message": "Experience added successfully.", "pk": str(experience.id)},
+            status=201,
+        )
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 
 @login_required(login_url="/login/")
