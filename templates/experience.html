@@ -9,6 +9,12 @@
   <main>
     <section class="experience-section" id="experience">
       <div class="section-container">
+        <form method="get" action="{% url 'main:show_experience' %}" class="skill-search">
+        <input type="search" name="q" value="{{ query }}"
+                placeholder="Search experience by name" aria-label="Search experience by name"
+                class="skill-search__input">
+        <button type="submit" class="button">Search</button>
+        </form>        
         <div class="section-header skill-header">
           <div>
             <p class="section-kicker">Leadership & Activities</p>
@@ -63,9 +69,13 @@
                 {% endif %}                
               </div>
             </div>
-          {% empty %}
-            <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
-          {% endfor %}
+        {% empty %}
+            {% if name_query %}
+                <p class="empty-state">No experience matches that name.</p>
+            {% else %}
+                <p class="empty-state">No experiences have been added yet.</p>
+            {% endif %}
+        {% endfor %}
         </div>
       </div>
     </section>

@@ -35,9 +35,15 @@ def show_main(request):
     return render(request, "index.html", context)
 
 def show_experience(request):
+    query = request.GET.get("q", "").strip()
+    experiences = Experience.objects.all()
+    if query:
+        experiences = experiences.filter(title__icontains=query) | experiences.filter(organization__icontains=query)
+
     context = {
         "short_name": "Faiz",
-        "experience_list": Experience.objects.all(),
+        "experience_list": experiences,
+        "query": query,
     }
     return render(request, "experience.html", context)
 
