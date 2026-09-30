@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, TextInput, Textarea, Select, URLInput, DateInput
+from django.utils.html import strip_tags
 
 from main.models import Skill, Experience
 
@@ -71,3 +73,20 @@ class ExperienceForm(ModelForm):
             "started_at": DateInput(attrs={"type": "date"}),
             "ended_at": DateInput(attrs={"type": "date"}),
         }
+
+    # Second line of defence: strip HTML tags from text the moment it comes in.
+    # Escaping when displaying (escapeHtml) is still the main protection.
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Title cannot consist of HTML tags only.")
+        return title
+
+    def clean_organization(self):
+        return strip_tags(self.cleaned_data["organization"]).strip()
+
+    def clean_description(self):
+        description = strip_tags(self.cleaned_data["description"]).strip()
+        if not description:
+            raise ValidationError("Description cannot consist of HTML tags only.")
+        return description
