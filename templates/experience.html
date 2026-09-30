@@ -22,9 +22,11 @@
             <h1 class="section-title">Organizational Experience</h1>
           </div>
           {% if user.is_superuser %}
-          <a href="{% url 'main:create_experience' %}" class="button">
+          <button type="button"
+                  class="button"
+                  popovertarget="add-experience-modal">
             <span aria-hidden="true">+</span> Add Experience
-          </a>
+          </button>
           {% endif %}
         </div>
 
@@ -48,6 +50,7 @@
 
   {% if user.is_superuser %}
     {% include "components/experience_delete_modal.html" %}
+    {% include "components/experience_form_modal.html" %}
   {% endif %}
 
   <script>
@@ -220,6 +223,11 @@
       clearTimeout(searchDebounceTimer);
       searchExperiences();
     });
+
+    // Close the add-experience modal (used after a successful save)
+    function closeExperienceModal() {
+      document.getElementById('add-experience-modal').hidePopover();
+    }
 
     // Start
     fetchExperiences(searchInput.value.trim());

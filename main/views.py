@@ -7,7 +7,8 @@ from django.core.exceptions import PermissionDenied
 from main.forms import SkillForm, ExperienceForm
 from main.models import Experience, Skill
 from django.core import serializers
-from django.http import HttpResponse
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
 import datetime
 
 def show_main(request):
@@ -36,14 +37,10 @@ def show_main(request):
 
 def show_experience(request):
     query = request.GET.get("q", "").strip()
-    experiences = Experience.objects.all()
-    if query:
-        experiences = experiences.filter(title__icontains=query) | experiences.filter(organization__icontains=query)
-
     context = {
         "short_name": "Faiz",
-        "experience_list": experiences,
         "query": query,
+        "form": ExperienceForm(),
     }
     return render(request, "experience.html", context)
 
@@ -94,9 +91,33 @@ def delete_experience(request, experience_id):
     return redirect("main:show_experience")
 
 def get_experience_json(request):
-    experiences = Experience.objects.all()
-    experiences_json = serializers.serialize("json", experiences, use_natural_foreign_keys=True)
-    return HttpResponse(experiences_json, content_type="application/json")
+    query = request.GET.get("q", "").strip()
+    experiences = Experience.objects.prefetch_related("liked_by").all()
+    if query:
+        experiences = experiences.filter(
+            Q(title__icontains=query) | Q(organization__icontains=query)
+        )
+
+    # Build the JSON manually so we can include per-user like state
+    data = []
+    for experience in experiences:
+        liked_users = list(experience.liked_by.all())
+        is_liked = request.user.is_authenticated and request.user in liked_users
+        data.append({
+            "pk": str(experience.id),
+            "fields": {
+                "title": experience.title,
+                "organization": experience.organization,
+                "category_display": experience.get_category_display(),
+                "date_range": experience.date_range_display,
+                "description_points": experience.description_points,
+                "thumbnail": experience.thumbnail,
+                "like_count": len(liked_users),
+                "is_liked": is_liked,
+                "liked_by_names": ", ".join(u.username for u in liked_users),
+            },
+        })
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url="/login/")
 def toggle_like(request, experience_id):
