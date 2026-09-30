@@ -59,7 +59,7 @@ def create_experience(request):
 
 
 @login_required(login_url="/login/")
-@permission_required("main.change_skill", raise_exception=True)
+@permission_required("main.change_experience", raise_exception=True)
 def update_experience(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)

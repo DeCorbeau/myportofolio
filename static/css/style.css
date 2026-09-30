@@ -83,6 +83,12 @@ body {
     color: var(--text-primary);
 }
 
+.nav-user {
+    color: var(--accent-purple);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
 /* =========================================================================
    3. HERO / ABOUT ME SECTION
    ========================================================================= */
@@ -875,4 +881,47 @@ body {
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 1.25rem;
+}
+
+.skill-search {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.skill-search__input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.7rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font: inherit;
+    transition: border-color 0.2s ease, outline-color 0.2s ease;
+}
+
+.skill-search__input::placeholder {
+    color: var(--text-muted);
+}
+
+.skill-search__input:focus {
+    outline: 2px solid var(--accent-purple);
+    border-color: var(--accent-purple);
+}
+
+.skill-search .button {
+    margin-right: 0;
+}
+
+@media (max-width: 768px) {
+    .skill-search {
+        flex-direction: column;
+    }
+
+    .skill-search .button {
+        width: 100%;
+    }
 }
