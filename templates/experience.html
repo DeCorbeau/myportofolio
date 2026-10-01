@@ -306,6 +306,32 @@
       });
     }
 
+    // Like / unlike without reloading the page
+    listContainer.addEventListener('submit', async function (event) {
+      const form = event.target.closest('.like-form');
+      if (!form) return;
+      event.preventDefault();
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        });
+        const result = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          fetchExperiences(searchInput.value.trim(), { silent: true });
+        } else {
+          showToast('Could not update like',
+                    result.message || `Something went wrong (status ${response.status}).`, 'error');
+        }
+      } catch (error) {
+        console.error('Error toggling like:', error);
+        showToast('Could not update like',
+                  'Could not reach the server. Please try again.', 'error');
+      }
+    });
+
     // Start
     fetchExperiences(searchInput.value.trim());
   </script>
