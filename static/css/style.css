@@ -34,20 +34,12 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     overflow-x: hidden;
+    padding-top: 92px;
 }
 
 /* =========================================================================
    2. NAVBAR
    ========================================================================= */
-body {
-    font-family: var(--font-family);
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    line-height: 1.6;
-    overflow-x: hidden;
-    padding-top: 92px;
-}
-
 .site-header {
     position: fixed;
     top: 16px;
@@ -90,15 +82,85 @@ body {
 }
 
 .nav-menu a {
+    position: relative;
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 500;
+    padding-bottom: 4px;
     transition: color 0.2s ease;
 }
 
 .nav-menu a:hover {
     color: var(--text-primary);
+}
+
+.nav-menu a.active {
+    color: var(--text-primary);
+}
+
+.nav-menu a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -4px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--accent-purple);
+}
+
+.nav-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: 0;
+    padding: 6px;
+    cursor: pointer;
+}
+
+.nav-toggle__bar {
+    width: 22px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+}
+
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+    }
+
+    .nav-menu {
+        position: absolute;
+        top: calc(100% + 12px);
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        background: rgba(18, 14, 30, 0.95);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 12px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    }
+
+    .nav-menu.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .nav-menu a,
+    .nav-user {
+        width: 100%;
+        padding: 10px 12px;
+    }
 }
 
 .nav-user {
