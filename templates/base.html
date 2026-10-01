@@ -31,12 +31,6 @@
     </div>
   </header>
 
-  {% if messages %}
-  <div class="section-container">
-    {% for message in messages %}<p class="form-help">{{ message }}</p>{% endfor %}
-  </div>
-  {% endif %}
-
   {% block content %}{% endblock content %}
 
   <footer class="site-footer">
@@ -44,6 +38,24 @@
       <p>&copy; 2026 {{ short_name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
     </div>
   </footer>
-  {% include 'components/toast.html' %}  
+  {% include 'components/toast.html' %}
+  {% if messages %}
+  <div id="django-messages" hidden>
+    {% for message in messages %}
+    <span data-level="{{ message.level_tag }}">{{ message }}</span>
+    {% endfor %}
+  </div>
+  <script>
+    // Show Django messages (set before a redirect) as a toast
+    (function () {
+      const TITLES = { success: 'Success', error: 'Error' };
+      document.querySelectorAll('#django-messages [data-level]').forEach(function (item) {
+        const level = item.dataset.level;
+        const type = (level === 'success' || level === 'error') ? level : 'normal';
+        showToast(TITLES[type] || 'Info', item.textContent.trim(), type);
+      });
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>
