@@ -289,3 +289,13 @@ def logout_user(request):
     response =  redirect("main:show_main")
     response.delete_cookie("last_login")
     return response
+
+@require_POST
+def delete_experience_ajax(request, experience_id):
+    if not request.user.is_superuser:
+        return JsonResponse({"message": "Only the portfolio owner can delete experience."}, status=403)
+    experience = Experience.objects.filter(pk=experience_id).first()
+    if experience is None:
+        return JsonResponse({"message": "Experience not found."}, status=404)
+    experience.delete()
+    return JsonResponse({"message": "Experience deleted successfully!"})

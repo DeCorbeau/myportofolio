@@ -63,7 +63,7 @@
     const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
     const LIKE_URL = "{% url 'main:toggle_like' '00000000-0000-0000-0000-000000000000' %}";
     const EDIT_URL = "{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}";
-    const DELETE_URL = "{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}";
+    const DELETE_URL = "{% url 'main:delete_experience_ajax' '00000000-0000-0000-0000-000000000000' %}";  
     let experienceAbortController;
 
     // DOM elements
@@ -160,13 +160,14 @@
     }
 
     // Fetch experience data from the JSON endpoint
-    async function fetchExperiences(searchQuery = '') {
+    async function fetchExperiences(searchQuery = '', { silent = false } = {}) {
       // Cancel the previous request so stale results never overwrite newer ones
       if (experienceAbortController) experienceAbortController.abort();
       experienceAbortController = new AbortController();
 
       try {
-        displayPageSection({ showLoading: true });
+        // silent = refresh the list in place without flashing the loading state
+        if (!silent) displayPageSection({ showLoading: true });
         const url = searchQuery
           ? `${EXPERIENCE_ENDPOINT}?q=${encodeURIComponent(searchQuery)}`
           : EXPERIENCE_ENDPOINT;
@@ -271,6 +272,38 @@
     // The form only exists for superusers, so check before attaching
     if (experienceForm) {
       experienceForm.addEventListener('submit', addExperience);
+    }
+
+    // Delete without reloading the page
+    if (deleteModalForm) {
+      deleteModalForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const submitButton = deleteModalForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true; // prevent double submit
+
+        try {
+          const response = await fetch(deleteModalForm.action, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          });
+          const result = await response.json().catch(() => ({}));
+          document.getElementById('delete-experience-modal').hidePopover();
+
+          if (response.ok) {
+            showToast('Success', result.message || 'Experience deleted successfully!', 'success');
+            fetchExperiences(searchInput.value.trim(), { silent: true });
+          } else {
+            showToast('Failed to delete experience',
+                      result.message || `Something went wrong (status ${response.status}).`, 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting experience:', error);
+          showToast('Failed to delete experience',
+                    'Could not reach the server. Please try again.', 'error');
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
     }
 
     // Start
