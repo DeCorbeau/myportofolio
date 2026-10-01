@@ -6,9 +6,8 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 from main.forms import SkillForm, ExperienceForm
 from main.models import Experience, Skill
-from django.core import serializers
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import datetime
 
@@ -151,24 +150,9 @@ def toggle_like(request, experience_id):
     return redirect("main:show_experience")
 
 def show_skill(request):
-    json_response = get_skill_json(request)
-    skills = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    skills = [skill.object for skill in skills]
-
     name_query = request.GET.get("name", "").strip()
-
-    grouped = {}
-    for code, label in Skill.SKILL_CATEGORIES:
-        items = [s for s in skills if s.category == code]
-        if items:
-            grouped[label] = items
-
     context = {
         "short_name": "Faiz",
-        "skill_groups": grouped,
         "name_query": name_query,
     }
     return render(request, "skill.html", context)
@@ -191,13 +175,35 @@ def create_skill(request):
 
 def get_skill_json(request):
     name_query = request.GET.get("name", "").strip()
-    skills = Skill.objects.all()
-
+    skills = Skill.objects.prefetch_related("endorsed_by").all()
     if name_query:
         skills = skills.filter(name__icontains=name_query)
 
-    skills_json = serializers.serialize("json", skills, use_natural_foreign_keys=True)
-    return HttpResponse(skills_json, content_type="application/json")
+    # Keep skills ordered by category, in the same order as SKILL_CATEGORIES
+    category_order = {code: index for index, (code, _) in enumerate(Skill.SKILL_CATEGORIES)}
+    skills = sorted(skills, key=lambda skill: category_order.get(skill.category, len(category_order)))
+
+    # Build the JSON manually so we can include per-user endorsement state
+    data = []
+    for skill in skills:
+        endorsers = list(skill.endorsed_by.all())
+        is_endorsed = request.user.is_authenticated and request.user in endorsers
+        data.append({
+            "pk": str(skill.id),
+            "fields": {
+                "name": skill.name,
+                "category": skill.category,
+                "category_display": skill.get_category_display(),
+                "proficiency": skill.proficiency,
+                "proficiency_display": skill.get_proficiency_display(),
+                "impact": skill.impact,
+                "context": skill.context,
+                "endorse_count": len(endorsers),
+                "is_endorsed": is_endorsed,
+                "endorsed_by_names": ", ".join(u.username for u in endorsers),
+            },
+        })
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url="/login/")
 def delete_skill(request, skill_id):

@@ -6,87 +6,252 @@
 {% endblock meta %}
 
 {% block content %}
-    <main>
+  <main>
     <section class="skill-section" id="skill">
-        <div class="section-container">
-            <form method="get" action="{% url 'main:show_skill' %}" class="skill-search">
-            <input type="search" name="name" value="{{ name_query }}"
-                    placeholder="Search skill by name" aria-label="Search skill by name"
-                    class="skill-search__input">
-            <button type="submit" class="button">Search</button>
-            </form>
+      <div class="section-container">
+        <form id="skill-search-form" class="skill-search">
+          <input type="search" id="search-input" name="name" value="{{ name_query }}"
+                 placeholder="Search skill by name" aria-label="Search skill by name"
+                 class="skill-search__input">
+          <button type="submit" class="button">Search</button>
+        </form>
+
         <div class="section-header skill-header">
-            <div>
-                <p class="section-kicker">What I Do</p>
-                <h1 class="section-title">Skills</h1>
-            </div>
-            {% if user.is_superuser %}
-            <a href="{% url 'main:create_skill' %}" class="button">
-                <span aria-hidden="true">+</span> Add Skill
-            </a>
-            {% endif %}
+          <div>
+            <p class="section-kicker">What I Do</p>
+            <h1 class="section-title">Skills</h1>
+          </div>
+          {% if user.is_superuser %}
+          <a href="{% url 'main:create_skill' %}" class="button">
+            <span aria-hidden="true">+</span> Add Skill
+          </a>
+          {% endif %}
         </div>
 
-        {% for category, skills in skill_groups.items %}
-            <div class="skill-category-group{% if name_query %} open{% endif %}">
-            <button class="skill-category-summary">{{ category }}</button>
-            <div class="skill-collapse">
-                <div class="skill-grid">
-                    {% for skill in skills %}
-                    <article class="skill-card">
-                        <h2>{{ skill.name }}</h2>
-                        <div class="proficiency-bar">
-                        {% for i in "1234" %}
-                            {% if forloop.counter <= skill.proficiency %}
-                            <span class="bar-segment filled"></span>
-                            {% else %}
-                            <span class="bar-segment"></span>
-                            {% endif %}
-                        {% endfor %}
-                        </div>
-                        <p class="proficiency-label">{{ skill.get_proficiency_display }}</p>
-                        {% if skill.impact %}<p class="skill-impact">{{ skill.impact }}</p>{% endif %}
-                        {% if skill.context %}<p class="skill-context">{{ skill.context }}</p>{% endif %}
-                        <form method="post" action="{% url 'main:toggle_endorse' skill.id %}" class="endorse-form">
-                            {% csrf_token %}
-                            <button type="submit"
-                                    class="button button-endorse{% if user in skill.endorsed_by.all %} is-endorsed{% endif %}"
-                                    title="{% if skill.endorsed_by.all %}Endorsed by {{ skill.endorsed_by.all|join:', ' }}{% else %}Be the first to endorse{% endif %}">
-                                <span aria-hidden="true">★</span>
-                                {% if user in skill.endorsed_by.all %}Remove Endorsement{% else %}Endorse{% endif %}
-                                <span class="endorse-count">{{ skill.endorsed_by.count }}</span>
-                            </button>
-                        </form>                        
-                        {% if perms.main.change_skill %}
-                        <div class="skill-actions">
-                            <a href="{% url 'main:update_skill' skill.id %}" class="button button-secondary">Edit</a>
-                        </div>
-                        {% endif %}
-                        {% if user.is_superuser %}
-                        {% include "components/skill_delete_modal.html" with skill=skill %}
-                        {% endif %}
-                    </article>
-                    {% endfor %}
-                </div>
-            </div>
-            </div>
-        {% empty %}
-            {% if name_query %}
-                <p class="empty-state">No skill matches that name.</p>
-            {% else %}
-                <p class="empty-state">No skills have been added yet.</p>
-            {% endif %}
-        {% endfor %}
+        <!-- Loading State -->
+        <div id="loading" class="empty-state hide">
+          <p>Loading skills...</p>
         </div>
+        <!-- Error State -->
+        <div id="error" class="empty-state hide">
+          <p>Failed to load skills. Please try again.</p>
+        </div>
+        <!-- Empty State -->
+        <div id="empty" class="empty-state hide">
+          <p id="empty-message">No skills have been added yet.</p>
+        </div>
+        <!-- Skill groups (filled by JavaScript) -->
+        <div id="skill-list" class="hide"></div>
+      </div>
     </section>
-    </main>
+  </main>
 
-    <script>
-        document.querySelectorAll('.skill-category-summary').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const saver = button.closest('.skill-category-group')
-                saver.classList.toggle('open')
-            });
+  {% if user.is_superuser %}
+    {% include "components/skill_delete_modal.html" %}
+  {% endif %}
+
+  <script>
+    // Configuration
+    const SKILL_ENDPOINT = "{% url 'main:get_skill_json' %}";
+    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+    const CAN_EDIT = "{{ perms.main.change_skill|yesno:'true,false' }}" === "true";
+    const CSRF_INPUT_HTML = `{% csrf_token %}`;
+    // Dummy UUID, replaced by the real ID from the JSON data
+    const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
+    const ENDORSE_URL = "{% url 'main:toggle_endorse' '00000000-0000-0000-0000-000000000000' %}";
+    const EDIT_URL = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
+    const DELETE_URL = "{% url 'main:delete_skill' '00000000-0000-0000-0000-000000000000' %}";
+    const PROFICIENCY_LEVELS = 4;
+    let skillAbortController;
+    // Remember which category groups are open so they stay open after a refresh
+    const openCategories = new Set();
+
+    // DOM elements
+    const loadingState = document.getElementById('loading');
+    const errorState = document.getElementById('error');
+    const emptyState = document.getElementById('empty');
+    const emptyMessage = document.getElementById('empty-message');
+    const listContainer = document.getElementById('skill-list');
+    const searchForm = document.getElementById('skill-search-form');
+    const searchInput = document.getElementById('search-input');
+
+    // These only exist for superusers, so check before using them
+    const deleteModalForm = document.getElementById('delete-skill-form');
+    const deleteModalName = document.getElementById('delete-skill-name');
+
+    // Show only the relevant page section
+    function displayPageSection({ showLoading = false, showError = false,
+                                  showEmpty = false, showList = false }) {
+      loadingState.classList.toggle('hide', !showLoading);
+      errorState.classList.toggle('hide', !showError);
+      emptyState.classList.toggle('hide', !showEmpty);
+      listContainer.classList.toggle('hide', !showList);
+    }
+
+    // Build one skill card from a JSON entry
+    function buildSkillCard(item) {
+      const skill = item.fields;
+      const id = item.pk;
+
+      const segmentsHtml = Array.from({ length: PROFICIENCY_LEVELS }, (_, index) =>
+        `<span class="bar-segment${index < skill.proficiency ? ' filled' : ''}"></span>`
+      ).join('');
+
+      const impactHtml = skill.impact
+        ? `<p class="skill-impact">${escapeHtml(skill.impact)}</p>`
+        : '';
+      const contextHtml = skill.context
+        ? `<p class="skill-context">${escapeHtml(skill.context)}</p>`
+        : '';
+
+      const endorseUrl = ENDORSE_URL.replace(DUMMY_ID, id);
+      const endorsedClass = skill.is_endorsed ? ' is-endorsed' : '';
+      const endorseText = skill.is_endorsed ? 'Remove Endorsement' : 'Endorse';
+      const endorseTitle = skill.endorse_count > 0
+        ? `Endorsed by ${escapeHtml(skill.endorsed_by_names)}`
+        : 'Be the first to endorse';
+
+      const editHtml = CAN_EDIT
+        ? `<div class="skill-actions">
+             <a href="${EDIT_URL.replace(DUMMY_ID, id)}" class="button button-secondary">Edit</a>
+           </div>`
+        : '';
+
+      const deleteHtml = IS_SUPERUSER
+        ? `<div class="skill-actions">
+             <button type="button"
+                     class="button button-danger js-delete-skill"
+                     popovertarget="delete-skill-modal"
+                     data-delete-url="${DELETE_URL.replace(DUMMY_ID, id)}"
+                     data-name="${escapeHtml(skill.name)}"
+                     title="Delete skill">Delete Skill</button>
+           </div>`
+        : '';
+
+      const card = document.createElement('article');
+      card.className = 'skill-card';
+      card.innerHTML = `
+        <h2>${escapeHtml(skill.name)}</h2>
+        <div class="proficiency-bar">${segmentsHtml}</div>
+        <p class="proficiency-label">${escapeHtml(skill.proficiency_display)}</p>
+        ${impactHtml}
+        ${contextHtml}
+        <form method="post" action="${endorseUrl}" class="endorse-form">
+          ${CSRF_INPUT_HTML}
+          <button type="submit" class="button button-endorse${endorsedClass}" title="${endorseTitle}">
+            <span aria-hidden="true">★</span>
+            ${endorseText}
+            <span class="endorse-count">${skill.endorse_count}</span>
+          </button>
+        </form>
+        ${editHtml}
+        ${deleteHtml}
+      `;
+      return card;
+    }
+
+    // Build one collapsible category group containing its skill cards
+    function buildCategoryGroup(categoryLabel, items, forceOpen) {
+      const group = document.createElement('div');
+      group.className = 'skill-category-group';
+      group.dataset.category = categoryLabel;
+      if (forceOpen || openCategories.has(categoryLabel)) group.classList.add('open');
+
+      const summary = document.createElement('button');
+      summary.type = 'button';
+      summary.className = 'skill-category-summary';
+      summary.textContent = categoryLabel; // textContent is safe by design
+
+      const collapse = document.createElement('div');
+      collapse.className = 'skill-collapse';
+      const grid = document.createElement('div');
+      grid.className = 'skill-grid';
+      items.forEach(item => grid.appendChild(buildSkillCard(item)));
+
+      collapse.appendChild(grid);
+      group.append(summary, collapse);
+      return group;
+    }
+
+    // Group the skills by category (server already sorts them) and render
+    function renderSkills(skillData, searchQuery) {
+      const groups = new Map();
+      skillData.forEach(item => {
+        const label = item.fields.category_display;
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(item);
+      });
+
+      listContainer.innerHTML = '';
+      groups.forEach((items, label) => {
+        // While searching, open every group so the matches are visible
+        listContainer.appendChild(buildCategoryGroup(label, items, Boolean(searchQuery)));
+      });
+    }
+
+    // Fetch skill data from the JSON endpoint
+    async function fetchSkills(searchQuery = '') {
+      // Cancel the previous request so stale results never overwrite newer ones
+      if (skillAbortController) skillAbortController.abort();
+      skillAbortController = new AbortController();
+
+      try {
+        displayPageSection({ showLoading: true });
+        const url = searchQuery
+          ? `${SKILL_ENDPOINT}?name=${encodeURIComponent(searchQuery)}`
+          : SKILL_ENDPOINT;
+
+        const response = await fetch(url, {
+          headers: { 'Accept': 'application/json' },
+          signal: skillAbortController.signal,
         });
-    </script>  
+        if (!response.ok) throw new Error('Failed to fetch data');
+
+        const skillData = await response.json();
+        if (skillData.length === 0) {
+          emptyMessage.textContent = searchQuery
+            ? 'No skill matches that name.'
+            : 'No skills have been added yet.';
+          displayPageSection({ showEmpty: true });
+        } else {
+          renderSkills(skillData, searchQuery);
+          displayPageSection({ showList: true });
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error('Error loading skills:', error);
+        displayPageSection({ showError: true });
+      }
+    }
+
+    // One listener for every card: expand/collapse groups and fill the delete modal
+    listContainer.addEventListener('click', function (event) {
+      const summary = event.target.closest('.skill-category-summary');
+      if (summary) {
+        const group = summary.closest('.skill-category-group');
+        group.classList.toggle('open');
+        if (group.classList.contains('open')) {
+          openCategories.add(group.dataset.category);
+        } else {
+          openCategories.delete(group.dataset.category);
+        }
+        return;
+      }
+
+      const deleteButton = event.target.closest('.js-delete-skill');
+      if (deleteButton && deleteModalForm && deleteModalName) {
+        deleteModalForm.action = deleteButton.dataset.deleteUrl;
+        deleteModalName.textContent = deleteButton.dataset.name;
+      }
+    });
+
+    // Search form: no page reload
+    searchForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      fetchSkills(searchInput.value.trim());
+    });
+
+    // Start
+    fetchSkills(searchInput.value.trim());
+  </script>
 {% endblock content %}

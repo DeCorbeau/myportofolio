@@ -1,41 +1,31 @@
-<div class="skill-actions">
-  <button type="button"
-          class="button button-danger"
-          popovertarget="delete-skill-{{ skill.id }}"
-          aria-label="Delete {{ skill.name }}"
-          title="Delete skill">
-    Delete Skill
-  </button>
-</div>
-
-<div id="delete-skill-{{ skill.id }}"
+<div id="delete-skill-modal"
      class="skill-delete-modal"
      popover="auto"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="delete-skill-title-{{ skill.id }}">
+     aria-labelledby="delete-skill-title">
   <button type="button"
           class="skill-delete-modal__backdrop"
-          popovertarget="delete-skill-{{ skill.id }}"
+          popovertarget="delete-skill-modal"
           popovertargetaction="hide"
-          aria-label="Tutup konfirmasi hapus"></button>
+          aria-label="Close delete confirmation"></button>
   <div class="skill-delete-modal__content">
     <button type="button"
             class="skill-delete-modal__close"
-            popovertarget="delete-skill-{{ skill.id }}"
+            popovertarget="delete-skill-modal"
             popovertargetaction="hide"
-            aria-label="Tutup konfirmasi hapus">&times;</button>
-    <h2 id="delete-skill-title-{{ skill.id }}">Delete Skill?</h2>
+            aria-label="Close delete confirmation">&times;</button>
+    <h2 id="delete-skill-title">Delete Skill?</h2>
     <p>
       Are you sure you want to delete
-      <strong>{{ skill.name }}</strong>?
+      <strong id="delete-skill-name"></strong>?
     </p>
     <div class="skill-delete-modal__actions">
       <button type="button"
               class="button button-secondary"
-              popovertarget="delete-skill-{{ skill.id }}"
+              popovertarget="delete-skill-modal"
               popovertargetaction="hide">Cancel</button>
-      <form method="post" action="{% url 'main:delete_skill' skill.id %}">
+      <form id="delete-skill-form" method="post" action="">
         {% csrf_token %}
         <button type="submit" class="button button-danger">Yes, Delete</button>
       </form>
