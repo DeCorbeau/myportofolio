@@ -324,3 +324,18 @@ def delete_skill_ajax(request, skill_id):
         return JsonResponse({"message": "Skill not found."}, status=404)
     skill.delete()
     return JsonResponse({"message": "Skill deleted successfully!"})
+
+@require_POST
+def toggle_endorse_ajax(request, skill_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"message": "Please log in to endorse a skill."}, status=401)
+    skill = Skill.objects.filter(pk=skill_id).first()
+    if skill is None:
+        return JsonResponse({"message": "Skill not found."}, status=404)
+    if skill.endorsed_by.filter(pk=request.user.pk).exists():
+        skill.endorsed_by.remove(request.user)
+        is_endorsed = False
+    else:
+        skill.endorsed_by.add(request.user)
+        is_endorsed = True
+    return JsonResponse({"is_endorsed": is_endorsed, "endorse_count": skill.endorsed_by.count()})
