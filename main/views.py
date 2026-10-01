@@ -98,18 +98,6 @@ def update_experience(request, experience_id):
     }
     return render(request, "experience_form.html", context)
 
-
-@login_required(login_url="/login/")
-def delete_experience(request, experience_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    experience = get_object_or_404(Experience, pk=experience_id)
-    if request.method == "POST":
-        experience.delete()
-        messages.success(request, "Experience deleted successfully!")
-        return redirect("main:show_experience")
-    return redirect("main:show_experience")
-
 def get_experience_json(request):
     query = request.GET.get("q", "").strip()
     experiences = Experience.objects.prefetch_related("liked_by").all()
@@ -138,16 +126,6 @@ def get_experience_json(request):
             },
         })
     return JsonResponse(data, safe=False)
-
-@login_required(login_url="/login/")
-def toggle_like(request, experience_id):
-    experience = get_object_or_404(Experience, pk=experience_id)
-    if request.method == "POST":
-        if request.user in experience.liked_by.all():
-            experience.liked_by.remove(request.user)
-        else:
-            experience.liked_by.add(request.user)
-    return redirect("main:show_experience")
 
 def show_skill(request):
     name_query = request.GET.get("name", "").strip()
@@ -226,17 +204,6 @@ def create_skill_ajax(request):
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @login_required(login_url="/login/")
-def delete_skill(request, skill_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied    
-    skill = get_object_or_404(Skill, pk=skill_id)
-    if request.method == "POST":
-        skill.delete()
-        messages.success(request, "Skill deleted successfully!")
-        return redirect("main:show_skill")
-    return redirect("main:show_skill")
-
-@login_required(login_url="/login/")
 @permission_required("main.change_skill", raise_exception=True)
 def update_skill(request, skill_id): 
     skill = get_object_or_404(Skill, pk=skill_id)
@@ -252,16 +219,6 @@ def update_skill(request, skill_id):
         "skill": skill,
     }
     return render(request, "skill_form.html", context)
-
-@login_required(login_url="/login/")
-def toggle_endorse(request, skill_id):
-    skill = get_object_or_404(Skill, pk=skill_id)
-    if request.method == "POST":
-        if request.user in skill.endorsed_by.all():
-            skill.endorsed_by.remove(request.user)
-        else:
-            skill.endorsed_by.add(request.user)
-    return redirect("main:show_skill")
 
 def register(request):
     form = UserCreationForm(request.POST or None)
