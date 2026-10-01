@@ -985,7 +985,7 @@ body {
 /* =========================================================================
    EXPERIENCE FORM MODAL
    ========================================================================= */
-.experience-form-modal {
+.form-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -1002,11 +1002,11 @@ body {
     justify-content: center;
 }
 
-.experience-form-modal:popover-open {
+.form-modal:popover-open {
     display: flex;
 }
 
-.experience-form-modal__backdrop {
+.form-modal__backdrop {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1017,7 +1017,7 @@ body {
     cursor: default;
 }
 
-.experience-form-modal__content {
+.form-modal__content {
     position: relative;
     z-index: 1;
     width: min(100%, 640px);
@@ -1029,18 +1029,18 @@ body {
     border-radius: 12px;
 }
 
-.experience-form-modal__content h2 {
+.form-modal__content h2 {
     margin: 0 2.5rem 1.25rem 0;
     font-size: 1.5rem;
     color: var(--text-primary);
 }
 
-.experience-form-modal__content .project-form {
+.form-modal__content .project-form {
     max-width: none;
     margin-top: 0;
 }
 
-.experience-form-modal__close {
+.form-modal__close {
     position: absolute;
     top: 1rem;
     right: 1rem;
@@ -1053,35 +1053,35 @@ body {
     cursor: pointer;
 }
 
-.experience-form-modal__actions {
+.form-modal__actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 1.5rem;
 }
 
-.experience-form-modal__actions .button {
+.form-modal__actions .button {
     margin-right: 0;
 }
 
 @media (max-width: 600px) {
-    .experience-form-modal {
+    .form-modal {
         align-items: flex-end;
         padding: 0;
     }
 
-    .experience-form-modal__content {
+    .form-modal__content {
         width: 100%;
         max-height: 90vh;
         padding: 1.25rem;
         border-radius: 12px 12px 0 0;
     }
 
-    .experience-form-modal__actions {
+    .form-modal__actions {
         flex-direction: column-reverse;
     }
 
-    .experience-form-modal__actions .button {
+    .form-modal__actions .button {
         width: 100%;
         text-align: center;
     }
