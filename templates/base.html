@@ -16,17 +16,23 @@
   <header class="site-header">
     <div class="nav-container">
       <a href="{% url 'main:show_main' %}" class="brand-logo">{{ short_name }}<span>.</span></a>
-      <nav class="nav-menu">
-          <a href="{% url 'main:show_main' %}">Profile</a>
-          <a href="{% url 'main:show_experience' %}">Experience</a>
-          <a href="{% url 'main:show_skill' %}">Skills</a>
+      <button type="button" class="nav-toggle" id="nav-toggle"
+              aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-menu">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+      <nav class="nav-menu" id="nav-menu">
+          <a href="{% url 'main:show_main' %}" class="{% if request.resolver_match.url_name == 'show_main' %}active{% endif %}">Profile</a>
+          <a href="{% url 'main:show_experience' %}" class="{% if request.resolver_match.url_name == 'show_experience' %}active{% endif %}">Experience</a>
+          <a href="{% url 'main:show_skill' %}" class="{% if request.resolver_match.url_name == 'show_skill' %}active{% endif %}">Skills</a>
           {% if user.is_authenticated %}
               <span class="nav-user">{{ user.username }}</span>
               <a href="{% url 'main:logout' %}">Logout</a>
           {% else %}
-              <a href="{% url 'main:login' %}">Login</a>
-              <a href="{% url 'main:register' %}">Register</a>
-          {% endif %}          
+              <a href="{% url 'main:login' %}" class="{% if request.resolver_match.url_name == 'login' %}active{% endif %}">Login</a>
+              <a href="{% url 'main:register' %}" class="{% if request.resolver_match.url_name == 'register' %}active{% endif %}">Register</a>
+          {% endif %}
       </nav>
     </div>
   </header>
@@ -57,5 +63,25 @@
     })();
   </script>
   {% endif %}
+  <script>
+    (function () {
+      const toggle = document.getElementById('nav-toggle');
+      const menu = document.getElementById('nav-menu');
+      if (!toggle || !menu) return;
+
+      toggle.addEventListener('click', function () {
+        const isOpen = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+
+      // Close the mobile menu once a link is tapped
+      menu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          menu.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>  
 </body>
 </html>
