@@ -116,6 +116,7 @@ def get_experience_json(request):
             "fields": {
                 "title": experience.title,
                 "organization": experience.organization,
+                "category": experience.category,
                 "category_display": experience.get_category_display(),
                 "date_range": experience.date_range_display,
                 "description_points": experience.description_points,
