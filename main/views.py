@@ -299,3 +299,18 @@ def delete_experience_ajax(request, experience_id):
         return JsonResponse({"message": "Experience not found."}, status=404)
     experience.delete()
     return JsonResponse({"message": "Experience deleted successfully!"})
+
+@require_POST
+def toggle_like_ajax(request, experience_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"message": "Please log in to like an experience."}, status=401)
+    experience = Experience.objects.filter(pk=experience_id).first()
+    if experience is None:
+        return JsonResponse({"message": "Experience not found."}, status=404)
+    if experience.liked_by.filter(pk=request.user.pk).exists():
+        experience.liked_by.remove(request.user)
+        is_liked = False
+    else:
+        experience.liked_by.add(request.user)
+        is_liked = True
+    return JsonResponse({"is_liked": is_liked, "like_count": experience.liked_by.count()})

@@ -61,7 +61,7 @@
     const CSRF_INPUT_HTML = `{% csrf_token %}`;
     // Dummy UUID, replaced by the real ID from the JSON data
     const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
-    const LIKE_URL = "{% url 'main:toggle_like' '00000000-0000-0000-0000-000000000000' %}";
+    const LIKE_URL = "{% url 'main:toggle_like_ajax' '00000000-0000-0000-0000-000000000000' %}";
     const EDIT_URL = "{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}";
     const DELETE_URL = "{% url 'main:delete_experience_ajax' '00000000-0000-0000-0000-000000000000' %}";  
     let experienceAbortController;
