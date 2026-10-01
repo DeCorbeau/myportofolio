@@ -74,6 +74,8 @@
     const listContainer = document.getElementById('skill-list');
     const searchForm = document.getElementById('skill-search-form');
     const searchInput = document.getElementById('search-input');
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    let searchDebounceTimer;
 
     // These only exist for superusers, so check before using them
     const deleteModalForm = document.getElementById('delete-skill-form');
@@ -245,10 +247,21 @@
       }
     });
 
-    // Search form: no page reload
+    function searchSkills() {
+      fetchSkills(searchInput.value.trim());
+    }
+
+    // Debounce: wait until the user stops typing before sending a request
+    searchInput.addEventListener('input', function () {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(searchSkills, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    // Search button / Enter: cancel any pending timer, then search right away
     searchForm.addEventListener('submit', function (event) {
       event.preventDefault();
-      fetchSkills(searchInput.value.trim());
+      clearTimeout(searchDebounceTimer);
+      searchSkills();
     });
 
     // Start
