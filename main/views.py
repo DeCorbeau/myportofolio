@@ -154,6 +154,7 @@ def show_skill(request):
     context = {
         "short_name": "Faiz",
         "name_query": name_query,
+        "form": SkillForm(),
     }
     return render(request, "skill.html", context)
 

@@ -22,9 +22,11 @@
             <h1 class="section-title">Skills</h1>
           </div>
           {% if user.is_superuser %}
-          <a href="{% url 'main:create_skill' %}" class="button">
+          <button type="button"
+                  class="button"
+                  popovertarget="add-skill-modal">
             <span aria-hidden="true">+</span> Add Skill
-          </a>
+          </button>
           {% endif %}
         </div>
 
@@ -48,6 +50,7 @@
 
   {% if user.is_superuser %}
     {% include "components/skill_delete_modal.html" %}
+    {% include "components/skill_form_modal.html" %}
   {% endif %}
 
   <script>
@@ -263,6 +266,11 @@
       clearTimeout(searchDebounceTimer);
       searchSkills();
     });
+
+    // Close the add-skill modal (used after a successful save)
+    function closeSkillModal() {
+      document.getElementById('add-skill-modal').hidePopover();
+    }
 
     // Start
     fetchSkills(searchInput.value.trim());
