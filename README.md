@@ -225,3 +225,43 @@ Berikut contoh interaksi saya bersama AI selama proses pengerjaan:
    * Tindakan Saya: Menjalankan perbaikan tersebut, lalu memverifikasi lewat `git show --stat` bahwa `base.html` berada di commit `feat(auth): add register, login, and logout views`.
 
 **Keterbatasan AI yang saya temui:** kode pada contoh tutorial tidak otomatis cocok dengan proyek saya (nama model, class CSS, dan teks UI berbahasa Indonesia) sehingga saya harus mengunggah file saya agar AI dapat menyesuaikannya. AI juga membuat kesalahan urutan pada instruksi Git di contoh 4, dan saya baru menyadarinya setelah membaca output terminal sendiri. Karena itu, saya memverifikasi hasil AI dengan menjalankan aplikasi, memeriksa `git show --stat`, dan menjalankan `python manage.py test` (14 test lolos).
+
+### Tugas 5
+
+1. **Jelaskan apa itu debouncing dan mengapa teknik ini penting diterapkan pada fitur pencarian yang menggunakan AJAX!**
+
+   Debouncing adalah teknik menunda eksekusi sebuah fungsi sampai pengguna berhenti melakukan suatu aksi selama jeda waktu tertentu. Pada pencarian skill, setiap kali pengguna menekan tombol, saya menghapus timer sebelumnya dengan `clearTimeout`, lalu memasang timer baru dengan `setTimeout` selama 300 ms (`SEARCH_DEBOUNCE_DELAY`). Permintaan `fetch()` baru dikirim jika timer tersebut berhasil habis, yaitu ketika pengguna sudah berhenti mengetik.
+
+   Tanpa debouncing, mengetik "leadership" akan mengirim sepuluh permintaan ke `/api/skill/`, satu untuk setiap huruf. Hal ini memboroskan bandwidth, membebani server dan database karena setiap permintaan menjalankan query `name__icontains`, serta membuat tampilan berkedip karena status loading terus berganti. Permintaan yang lebih lama juga bisa selesai belakangan dan menimpa hasil yang lebih baru. Karena itu, selain debouncing, saya memakai `AbortController` untuk membatalkan permintaan sebelumnya.
+
+2. **Jelaskan fungsi dari penggunaan `await` ketika kita menggunakan `fetch()`! Apa yang akan terjadi jika kita tidak menggunakan `await`?**
+
+   `fetch()` bersifat asinkron dan langsung mengembalikan sebuah Promise, bukan data hasilnya, karena respons dari server membutuhkan waktu. Kata kunci `await` (di dalam fungsi `async`) menghentikan jalannya fungsi tersebut sampai Promise selesai, lalu memberikan nilainya, yaitu objek `Response`. `await` hanya menunda fungsi itu saja, sedangkan halaman tetap responsif.
+
+   Jika `await` tidak digunakan, variabel `response` hanya berisi Promise yang belum selesai sehingga `response.ok` bernilai `undefined` dan pemanggilan `response.json()` gagal. Kode setelah `fetch()` juga langsung berjalan sebelum data tiba, misalnya daftar skill dirender dari data yang belum ada. Selain itu, error jaringan tidak akan tertangkap oleh `try/catch` karena penolakan Promise terjadi setelah blok `try` selesai, sehingga status error tidak pernah tampil.
+
+3. **Jelaskan apa itu serangan XSS (Cross-Site Scripting) dan mengapa data yang ditampilkan melalui AJAX/JavaScript lebih rentan terhadap serangan ini daripada data yang ditampilkan langsung melalui template Django!**
+
+   XSS adalah serangan ketika penyerang menyisipkan kode berbahaya, misalnya `<img src="x" onerror="...">`, ke dalam data yang kemudian ditampilkan ke pengguna lain. Jika browser menjalankan kode itu sebagai bagian dari halaman, penyerang bisa mencuri cookie sesi atau melakukan aksi atas nama korban.
+
+   Template Django melakukan auto-escape pada `{{ variabel }}`, yaitu mengubah karakter seperti `<`, `>`, dan `"` menjadi entitas HTML sehingga input berbahaya tampil sebagai teks biasa. Pada AJAX, saya menyusun HTML sendiri dari data JSON dengan template literal dan `innerHTML`. Tidak ada escaping otomatis, dan browser akan mem-parsing string tersebut sebagai HTML sungguhan. Satu field yang lupa di-escape sudah cukup untuk menjadi celah. Karena itu, pada `buildSkillCard` setiap nilai teks dibungkus `escapeHtml()` (dan label kategori memakai `textContent`). Sebagai lapisan kedua, server membersihkan input dengan `strip_tags` pada `clean_name`, `clean_impact`, dan `clean_context` di `SkillForm`.
+
+**AI Disclosure — Tugas 5**
+
+Dalam pengerjaan Tugas Individu 5 ini, saya memanfaatkan AI, yaitu Claude, untuk menganalisis Tutorial 05 dan instruksi tugas 05. AI membimbing saya langkah demi langkah, menjelaskan alasan di balik tiap langkah, lalu membantu memeriksa hasilnya setelah saya mengunggah file proyek saya.
+
+Sama seperti pada tugas-tugas sebelumnya, saya tidak pernah menyalin dan menempelkan kode yang diberikan AI begitu saja. Pada tugas ini, pendekatan yang digunakan AI juga lebih banyak berupa bimbingan bertahap. AI menjelaskan konsep atau menunjukkan letak kesalahan, kemudian saya menulis sendiri perbaikannya sebelum diperiksa ulang.
+
+Berikut 3 contoh interaksi saya bersama AI selama proses pengerjaan:
+
+1. **Menganalisis Tutorial 05 dan Memetakannya ke Proyek**
+   * Prompt: "aku mau kamu analisis dulu dong dari tutorial 5 sebenarnnya isinya ingin kita menambahkan apa saja dan nanti gimana cara kamu tahu apa yang belum ada di myportofolio kita. ini file md nya ya"
+   * Tujuan: Memahami isi Tutorial 05 dan mengetahui bagian mana yang belum ada di portofolio saya.
+   * Respon AI: Merangkum tutorial menjadi tujuh bagian dan menyatakan bahwa AI tidak dapat melihat proyek saya sehingga tidak akan menebak lalu meminta file terkait. Setelah file saya kirim, AI memetakan bahwa toast, pemuatan daftar lewat AJAX, dan `escapeHtml` sudah ada di Experience, sedangkan debouncing, modal tambah data, penambahan data lewat AJAX, dan `strip_tags` belum ada.
+   * Tindakan Saya: Mengirim file yang diminta, mengerjakan perubahan untuk Experience dalam empat commit, dan menguji hasilnya di browser.
+
+2. **Menentukan Section untuk Tugas 5**
+   * Prompt: "halo. jadi yang kemarin udah, tapi aku mau cek satu hal. apa instruksi dari tugas 5 bilang apply cuma id satu section atau di semua section yang sudah dibuat? kalau aman lanjut langsung aja ke tugas 5"
+   * Tujuan: Memastikan cakupan Tugas 5 sebelum mulai mengerjakan.
+   * Respon AI: Membaca instruksi tugas dan menyimpulkan bahwa cukup satu section yang berbeda dari yang dipakai pada tutorial. Karena Experience sudah dipakai di tutorial, AI menyarankan Skill, yang memiliki fitur endorse (setara star pada Tugas 4) dan hak akses superuser.
+   * Tindakan Saya: Menyetujui pilihan tersebut dan mencocokkannya dengan checklist pada deskripsi tugas.
