@@ -272,6 +272,50 @@
       document.getElementById('add-skill-modal').hidePopover();
     }
 
+    const CREATE_SKILL_ENDPOINT = "{% url 'main:create_skill_ajax' %}";
+    const skillForm = document.getElementById('skill-form');
+
+    // Send the form to the server with fetch (no page reload)
+    async function addSkill(event) {
+      event.preventDefault();
+      const submitButton = skillForm.querySelector('button[type="submit"]');
+      submitButton.disabled = true; // prevent double submit
+
+      try {
+        const response = await fetch(CREATE_SKILL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: new FormData(skillForm),
+        });
+        // .catch handles non-JSON replies (e.g. an HTML 403 page from CSRF failure)
+        const result = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          skillForm.reset();
+          closeSkillModal();
+          showToast('Success', 'New skill added successfully!', 'success');
+          fetchSkills(searchInput.value.trim());
+        } else {
+          const errorMessages = result.errors
+            ? Object.entries(result.errors).flatMap(([field, errs]) =>
+                errs.map(error => `${field}: ${error.message}`))
+            : [result.message || `Something went wrong (status ${response.status}).`];
+          showToast('Failed to add skill', errorMessages.join(' '), 'error');
+        }
+      } catch (error) {
+        console.error('Error adding skill:', error);
+        showToast('Failed to add skill',
+                  'Could not reach the server. Please try again.', 'error');
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    // The form only exists for superusers, so check before attaching
+    if (skillForm) {
+      skillForm.addEventListener('submit', addSkill);
+    }
+
     // Start
     fetchSkills(searchInput.value.trim());
   </script>

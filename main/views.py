@@ -206,6 +206,25 @@ def get_skill_json(request):
         })
     return JsonResponse(data, safe=False)
 
+@require_POST
+def create_skill_ajax(request):
+    # No @login_required here: it would redirect to an HTML login page, which
+    # fetch() cannot recognise as a failure. AnonymousUser has is_superuser == False,
+    # so this single check rejects guests and normal users with a JSON 403.
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Only the portfolio owner can add skills."},
+            status=403,
+        )
+    form = SkillForm(request.POST)
+    if form.is_valid():
+        skill = form.save()
+        return JsonResponse(
+            {"message": "Skill added successfully.", "pk": str(skill.id)},
+            status=201,
+        )
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
 @login_required(login_url="/login/")
 def delete_skill(request, skill_id):
     if not request.user.is_superuser:
