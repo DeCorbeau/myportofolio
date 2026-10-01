@@ -155,17 +155,16 @@
       return card;
     }
 
-    // Build one collapsible category group containing its skill cards
-    function buildCategoryGroup(categoryLabel, items, forceOpen) {
+    function buildCategoryGroup(categoryCode, categoryLabel, items, forceOpen) {
       const group = document.createElement('div');
       group.className = 'skill-category-group';
-      group.dataset.category = categoryLabel;
-      if (forceOpen || openCategories.has(categoryLabel)) group.classList.add('open');
+      group.dataset.category = categoryCode;
+      if (forceOpen || openCategories.has(categoryCode)) group.classList.add('open');
 
       const summary = document.createElement('button');
       summary.type = 'button';
       summary.className = 'skill-category-summary';
-      summary.textContent = categoryLabel; // textContent is safe by design
+      summary.textContent = categoryLabel;
 
       const collapse = document.createElement('div');
       collapse.className = 'skill-collapse';
@@ -178,19 +177,18 @@
       return group;
     }
 
-    // Group the skills by category (server already sorts them) and render
     function renderSkills(skillData, searchQuery) {
-      const groups = new Map();
+      const groups = new Map(); // code -> { label, items }
       skillData.forEach(item => {
+        const code = item.fields.category;
         const label = item.fields.category_display;
-        if (!groups.has(label)) groups.set(label, []);
-        groups.get(label).push(item);
+        if (!groups.has(code)) groups.set(code, { label, items: [] });
+        groups.get(code).items.push(item);
       });
 
       listContainer.innerHTML = '';
-      groups.forEach((items, label) => {
-        // While searching, open every group so the matches are visible
-        listContainer.appendChild(buildCategoryGroup(label, items, Boolean(searchQuery)));
+      groups.forEach(({ label, items }, code) => {
+        listContainer.appendChild(buildCategoryGroup(code, label, items, Boolean(searchQuery)));
       });
     }
 
