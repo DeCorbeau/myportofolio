@@ -103,3 +103,11 @@ class ExperienceForm(ModelForm):
         if not description:
             raise ValidationError("Description cannot consist of HTML tags only.")
         return description
+
+    def clean(self):
+        cleaned_data = super().clean()
+        started_at = cleaned_data.get("started_at")
+        ended_at = cleaned_data.get("ended_at")
+        if started_at and ended_at and ended_at.date() < started_at:
+            self.add_error("ended_at", "End date cannot be earlier than the start date.")
+        return cleaned_data
