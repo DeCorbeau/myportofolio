@@ -9,6 +9,9 @@
     --border-hover: rgba(168, 85, 247, 0.4);
     --accent-purple: #a855f7;
     --accent-glow: rgba(168, 85, 247, 0.35);
+    --accent-cyan: #22d3ee;
+    --accent-amber: #fbbf24;
+    --accent-pink: #f472b6;    
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
@@ -1085,4 +1088,68 @@ body {
         width: 100%;
         text-align: center;
     }
+}
+
+/* Category color tokens: every card/group reads --cat via inheritance, so colors are defined once here */
+[data-category="leadership"],
+[data-category="committee"] {
+    --cat: var(--accent-purple);
+}
+
+[data-category="event"],
+[data-category="volunteer"] {
+    --cat: var(--accent-pink);
+}
+
+[data-category="communication"],
+[data-category="research"],
+[data-category="freelance"] {
+    --cat: var(--accent-amber);
+}
+
+[data-category="technical"],
+[data-category="internship"],
+[data-category="part-time"],
+[data-category="full-time"] {
+    --cat: var(--accent-cyan);
+}
+
+/* Skills: color by category */
+.skill-category-summary {
+    color: var(--cat, var(--accent-purple));
+}
+
+.skill-card {
+    border-top: 2px solid var(--cat, var(--accent-purple));
+}
+
+.skill-card:hover {
+    border-top-color: var(--cat, var(--accent-purple));
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--cat, var(--accent-purple)) 25%, transparent);
+}
+
+.bar-segment.filled {
+    background-color: var(--cat, var(--accent-purple));
+}
+
+/* Experience: color by category */
+.role-category {
+    color: var(--cat, var(--accent-purple));
+}
+
+.role-desc-list li::before {
+    background: var(--cat, var(--accent-purple));
+}
+
+.timeline-dot {
+    border-color: var(--cat, var(--accent-purple));
+    box-shadow: 0 0 8px color-mix(in srgb, var(--cat, var(--accent-purple)) 60%, transparent);
+}
+
+.timeline-item:hover .timeline-dot {
+    background: var(--cat, var(--accent-purple));
+}
+
+.timeline-item:hover .timeline-card {
+    border-color: color-mix(in srgb, var(--cat, var(--accent-purple)) 50%, transparent);
 }
