@@ -63,7 +63,7 @@
     const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
     const ENDORSE_URL = "{% url 'main:toggle_endorse' '00000000-0000-0000-0000-000000000000' %}";
     const EDIT_URL = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
-    const DELETE_URL = "{% url 'main:delete_skill' '00000000-0000-0000-0000-000000000000' %}";
+    const DELETE_URL = "{% url 'main:delete_skill_ajax' '00000000-0000-0000-0000-000000000000' %}";
     const PROFICIENCY_LEVELS = 4;
     let skillAbortController;
     // Remember which category groups are open so they stay open after a refresh
@@ -195,13 +195,14 @@
     }
 
     // Fetch skill data from the JSON endpoint
-    async function fetchSkills(searchQuery = '') {
+    async function fetchSkills(searchQuery = '', { silent = false } = {}) {
       // Cancel the previous request so stale results never overwrite newer ones
       if (skillAbortController) skillAbortController.abort();
       skillAbortController = new AbortController();
 
       try {
-        displayPageSection({ showLoading: true });
+        // silent = refresh the list in place without flashing the loading state
+        if (!silent) displayPageSection({ showLoading: true });
         const url = searchQuery
           ? `${SKILL_ENDPOINT}?name=${encodeURIComponent(searchQuery)}`
           : SKILL_ENDPOINT;
@@ -314,6 +315,38 @@
     // The form only exists for superusers, so check before attaching
     if (skillForm) {
       skillForm.addEventListener('submit', addSkill);
+    }
+
+    // Delete without reloading the page
+    if (deleteModalForm) {
+      deleteModalForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const submitButton = deleteModalForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true; // prevent double submit
+
+        try {
+          const response = await fetch(deleteModalForm.action, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          });
+          const result = await response.json().catch(() => ({}));
+          document.getElementById('delete-skill-modal').hidePopover();
+
+          if (response.ok) {
+            showToast('Success', result.message || 'Skill deleted successfully!', 'success');
+            fetchSkills(searchInput.value.trim(), { silent: true });
+          } else {
+            showToast('Failed to delete skill',
+                      result.message || `Something went wrong (status ${response.status}).`, 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting skill:', error);
+          showToast('Failed to delete skill',
+                    'Could not reach the server. Please try again.', 'error');
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
     }
 
     // Start

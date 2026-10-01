@@ -314,3 +314,13 @@ def toggle_like_ajax(request, experience_id):
         experience.liked_by.add(request.user)
         is_liked = True
     return JsonResponse({"is_liked": is_liked, "like_count": experience.liked_by.count()})
+
+@require_POST
+def delete_skill_ajax(request, skill_id):
+    if not request.user.is_superuser:
+        return JsonResponse({"message": "Only the portfolio owner can delete skills."}, status=403)
+    skill = Skill.objects.filter(pk=skill_id).first()
+    if skill is None:
+        return JsonResponse({"message": "Skill not found."}, status=404)
+    skill.delete()
+    return JsonResponse({"message": "Skill deleted successfully!"})
