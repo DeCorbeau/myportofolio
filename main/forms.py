@@ -42,6 +42,19 @@ class SkillForm(ModelForm):
                 }
             ),
         }
+    # Second line of defence: strip HTML tags from text the moment it comes in.
+    # Escaping when displaying (escapeHtml) is still the main protection.
+    def clean_name(self):
+        name = strip_tags(self.cleaned_data["name"]).strip()
+        if not name:
+            raise ValidationError("Skill name cannot consist of HTML tags only.")
+        return name
+
+    def clean_impact(self):
+        return strip_tags(self.cleaned_data["impact"]).strip()
+
+    def clean_context(self):
+        return strip_tags(self.cleaned_data["context"]).strip()    
 
 class ExperienceForm(ModelForm):
     class Meta:
