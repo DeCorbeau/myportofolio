@@ -97,6 +97,7 @@
 
       const element = document.createElement('div');
       element.className = 'timeline-item';
+      element.dataset.category = experience.category;
 
       const thumbnailHtml = experience.thumbnail
         ? `<img src="${escapeHtml(experience.thumbnail)}" alt="${escapeHtml(experience.title)}">`
