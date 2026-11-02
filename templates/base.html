@@ -9,11 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <script src="{% static 'js/utils.js' %}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"></script>
-  <script src="{% static 'js/htmx-events.js' %}"></script>
   {% block meta %}{% endblock meta %}
 </head>
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body data-csrf="{{ csrf_token }}">
 
   <header class="site-header">
     <div class="nav-container">

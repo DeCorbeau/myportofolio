@@ -1230,15 +1230,3 @@ body {
 .timeline-item:hover .timeline-card {
     border-color: color-mix(in srgb, var(--cat, var(--accent-purple)) 50%, transparent);
 }
-
-/* ---- HTMX additions: append this to the end of static/css/style.css ---- */
-
-/* Search indicator: hidden by default, shown only while a request runs.
-   HTMX puts the htmx-request class on the indicator element itself. */
-.htmx-indicator { display: none; }
-.htmx-request .htmx-indicator,
-.htmx-request.htmx-indicator { display: inline-block; }
-
-/* When the last skill in a category is deleted, hide the now-empty group
-   without a page reload. */
-.skill-category-group:not(:has(.skill-card)) { display: none; }
