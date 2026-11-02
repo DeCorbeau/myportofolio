@@ -164,7 +164,23 @@ class ExperienceAPITest(RoleSetupMixin, APITestCase):
             {**self.payload, "started_at": "2025-01-01", "ended_at": "2025-06-01"},
             format="json",
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_owner_patch_and_put(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.patch(self.detail_url, {"title": "Changed"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Changed")
+        self.assertEqual(self.experience.description, "Led the team")  # PATCH parsial: field lain tetap
+
+        response = self.client.put(self.detail_url, {"title": "Incomplete"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.put(self.detail_url, self.payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "New experience")
 
 class SkillAPITest(RoleSetupMixin, APITestCase):
     def setUp(self):
@@ -245,4 +261,37 @@ class SkillAPITest(RoleSetupMixin, APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertNotIn("<", response.data["name"])        
+        self.assertNotIn("<", response.data["name"])
+
+    def test_owner_can_patch_and_editor_can_put(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.patch(self.detail_url, {"impact": "Shipped it"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.skill.refresh_from_db()
+        self.assertEqual(self.skill.impact, "Shipped it")
+        self.assertEqual(self.skill.name, "Python")
+
+        self.client.force_authenticate(user=self.editor)
+        response = self.client.put(self.detail_url, self.payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.skill.refresh_from_db()
+        self.assertEqual(self.skill.name, "Public Speaking")
+
+    def test_session_write_without_csrf_is_rejected(self):
+        client = APIClient(enforce_csrf_checks=True)
+        self.assertTrue(client.login(username="editor", password=PASSWORD))
+        response = client.patch(self.detail_url, {"name": "X"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.skill.refresh_from_db()
+        self.assertEqual(self.skill.name, "Python")
+
+    def test_session_write_with_csrf_succeeds(self):
+        client = APIClient(enforce_csrf_checks=True)
+        client.login(username="editor", password=PASSWORD)
+        # halaman Skill harus menyetel cookie csrftoken (lewat {{ csrf_token }} di base.html)
+        self.assertEqual(client.get(reverse("main:show_skill")).status_code, status.HTTP_200_OK)
+        token = client.cookies["csrftoken"].value
+        response = client.patch(
+            self.detail_url, {"proficiency": 4}, format="json", HTTP_X_CSRFTOKEN=token
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
