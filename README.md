@@ -265,3 +265,35 @@ Berikut 3 contoh interaksi saya bersama AI selama proses pengerjaan:
    * Tujuan: Memastikan cakupan Tugas 5 sebelum mulai mengerjakan.
    * Respon AI: Membaca instruksi tugas dan menyimpulkan bahwa cukup satu section yang berbeda dari yang dipakai pada tutorial. Karena Experience sudah dipakai di tutorial, AI menyarankan Skill, yang memiliki fitur endorse (setara star pada Tugas 4) dan hak akses superuser.
    * Tindakan Saya: Menyetujui pilihan tersebut dan mencocokkannya dengan checklist pada deskripsi tugas.
+
+### Tugas 6
+
+1. **Jelaskan apa yang dimaksud dengan REST dan mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API sebagai RESTful! Jelaskan pula perbedaan PUT dan PATCH beserta contoh kapan masing-masing sebaiknya digunakan!**
+
+   REST (Representational State Transfer) adalah gaya arsitektur web API yang memodelkan data sebagai sumber daya (resource) yang dialamatkan lewat URL konsisten, memanfaatkan metode standar HTTP (GET, POST, PUT, PATCH, DELETE) untuk menyatakan tindakan, serta mengembalikan status code HTTP yang sesuai. Komunikasi antarklien dan server bersifat stateless dengan pertukaran representasi data seperti JSON. Mengembalikan JSON saja belum membuat API menjadi RESTful jika URL masih memuat nama tindakan (misalnya /skills/delete-ajax/), hanya menggunakan POST untuk semua hal, atau selalu mengembalikan status 200 OK tanpa merefleksikan hasil pemrosesan.
+
+   Perbedaan utama PUT dan PATCH terletak pada cakupan pembaruan data. PUT mengganti seluruh representasi resource sehingga semua field wajib dikirim (jika field mandatory absen, server mengembalikan 400 Bad Request). Sementara itu, PATCH hanya memperbarui field yang dikirim (partial update). Pemilihan PATCH cocok untuk fitur modal edit saat pengguna hanya memperbarui sebagian data (seperti proficiency pada Skill), sedangkan PUT cocok digunakan ketika klien memegang representasi data lengkap dan berniat menggantinya secara keseluruhan (seperti mengimpor ulang satu entri portofolio dari file).
+
+2. **Jelaskan peran serializer pada Django REST Framework! Apa keuntungannya dibandingkan merakit dictionary secara manual dengan JsonResponse seperti pada Tutorial 05?**
+
+   Serializer pada Django REST Framework bertindak sebagai penerjemah data dua arah. Pada alur GET, serializer mengubah objek model Django menjadi tipe data Python yang disajikan renderer sebagai JSON (serialization). Pada alur POST/PUT/PATCH, serializer menguji, membersihkan, dan mengonversi input klien menjadi objek model via is_valid() dan save() (deserialization).
+
+   Dibandingkan dengan penyusunan dictionary manual menggunakan JsonResponse, keuntungan serializer meliputi: (a) validasi terpusat di satu tempat untuk semua jalur manipulasi data; (b) bentuk respons error yang seragam (400 Bad Request per field); (c) pengaturan hak baca/tulis field secara deklaratif (mencegah manipulasi id atau field komputasi); (d) penyederhanaan logika view lewat abstraksi ModelSerializer; dan (e) keterbacaan kode yang lebih baik serta kemudahan dalam pembuatan unit test.
+
+3. **Jelaskan perbedaan autentikasi dan otorisasi pada Django REST Framework! Mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?**
+
+   Autentikasi memverifikasi identitas pengguna ("siapa Anda?"), sedangkan otorisasi menentukan hak akses pengguna terhadap data/tindakan tertentu ("apa yang boleh Anda lakukan?"). Di DRF, SessionAuthentication mengidentifikasi pengguna dari cookie sesi ke request.user, lalu permission class (seperti CanManageSkill) menentukan apakah aksi tersebut diizinkan berdasarkan peranan (role).
+
+   Hak akses wajib diperiksa di server melalui permission class karena menyembunyikan tombol di template hanya mengubah Tampilan (UI), bukan mengamankan Jaringan. Pengguna dapat dengan mudah memicu permintaan HTTP seperti DELETE atau PATCH secara langsung melalui DevTools, fetch(), atau curl. Tanpa validasi otorisasi di sisi server, permintaan ilegal tersebut akan tetap dieksekusi oleh basis data.
+
+4. **Jelaskan mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai SessionAuthentication! Mengapa test yang memakai force_authenticate tidak cukup untuk membuktikan bahwa perlindungan CSRF berjalan?**
+
+   Ketika menggunakan SessionAuthentication, browser mengirimkan cookie sesi secara otomatis pada setiap permintaan ke domain target, termasuk permintaan yang dipicu oleh situs jahat (CSRF). Oleh karena itu, token CSRF (pada header X-CSRFToken) tetap diperlukan untuk memvalidasi bahwa permintaan perubahan data benar-benar berasal dari antarmuka aplikasi kita, memanfaatkan batasan Same-Origin Policy (SOP).
+
+   Pengujian dengan force_authenticate langsung menyuntikkan pengguna ke dalam objek request dan melompati alur SessionAuthentication sehingga mekanisme pengecekan CSRF tidak pernah dijalankan. Untuk membuktikan bahwa proteksi CSRF bekerja, pengujian harus menggunakan APIClient(enforce_csrf_checks=True) dengan alur .login() nyata untuk menguji bahwa permintaan tanpa token CSRF akan ditolak (403 Forbidden) dan permintaan dengan token CSRF yang valid berhasil diproses.
+
+**AI Disclosure — Tugas 6**
+
+Dalam pengerjaan Tugas Individu 6 ini, saya memanfaatkan AI (Claude) untuk menganalisis materi Tutorial 07 serta instruksi spesifikasi tugas 06. AI membimbing saya secara bertahap dalam memahami konsep REST API, DRF, Serializer, serta mekanisme keamanan autentikasi dan CSRF.
+
+Saya tidak pernah menyalin dan menempelkan kode yang diberikan AI begitu saja. Pendekatan yang digunakan AI berupa bimbingan instruksional bertahap: AI menjelaskan konsep atau menunjukkan letak kesalahan pada alur logika/test, kemudian saya menulis sendiri perbaikan kodenya sebelum dievaluasi ulang.
