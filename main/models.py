@@ -19,6 +19,7 @@ class Experience(models.Model):
     description = models.TextField()
     category = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES, default='full-time')
     thumbnail = models.URLField(blank=True, null=True)
+    thumbnail_image = models.ImageField(upload_to="experience_thumbnails/", blank=True, null=True)
     started_at = models.DateField()
     ended_at = models.DateTimeField(blank=True, null=True)
     liked_by = models.ManyToManyField(User, related_name="liked_experiences", blank=True)
