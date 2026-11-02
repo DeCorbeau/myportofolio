@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from main.models import Experience, Skill
-from main.permissions import CanManageExperience, CanManageSkill
+from main.permissions import CanManageSkill, IsPortfolioOwnerOrReadOnly
 from main.serializers import ExperienceSerializer, SkillSerializer
 
 
@@ -52,7 +52,7 @@ def _toggle(relation, user):
 
 @api_view(["GET", "HEAD", "POST"])
 @authentication_classes([SessionAuthentication])
-@permission_classes([CanManageExperience])
+@permission_classes([IsPortfolioOwnerOrReadOnly])
 def experience_list(request):
     experiences = Experience.objects.prefetch_related("liked_by").order_by(
         "-started_at", "title", "id"
@@ -67,7 +67,7 @@ def experience_list(request):
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
 @authentication_classes([SessionAuthentication])
-@permission_classes([CanManageExperience])
+@permission_classes([IsPortfolioOwnerOrReadOnly])
 def experience_detail(request, experience_id):
     experience = get_object_or_404(
         Experience.objects.prefetch_related("liked_by"), pk=experience_id

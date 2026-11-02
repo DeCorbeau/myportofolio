@@ -87,7 +87,7 @@ class PageTest(BaseTestCase):
         expected = {
             None: (False, False, False),
             "regular": (False, False, False),
-            "editor": (False, True, False),
+            "editor": (False, False, False),            
             "owner": (True, True, True),
         }
         for username, (add, edit, delete) in expected.items():

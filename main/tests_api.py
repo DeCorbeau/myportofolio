@@ -66,19 +66,15 @@ class ExperienceAPITest(RoleSetupMixin, APITestCase):
         self.experience.refresh_from_db()
         self.assertEqual(self.experience.title, "Committee Head")
 
-    def test_editor_can_update_but_not_create_or_delete(self):
+    def test_editor_cannot_manage_experience(self):
+        # Experience adalah contoh tutorial: hanya pemilik yang boleh menulis
         self.client.force_authenticate(user=self.editor)
-        response = self.client.patch(self.detail_url, {"title": "Updated"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "Updated")
-        self.assertEqual(self.experience.description, "Led the team")
-
-        response = self.client.put(self.detail_url, self.payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
+        self.assertEqual(self.client.patch(self.detail_url, {"title": "X"}, format="json").status_code, 403)
+        self.assertEqual(self.client.put(self.detail_url, self.payload, format="json").status_code, 403)
         self.assertEqual(self.client.post(self.list_url, self.payload, format="json").status_code, 403)
         self.assertEqual(self.client.delete(self.detail_url).status_code, 403)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Committee Head")
         self.assertEqual(Experience.objects.count(), 1)
 
     def test_owner_can_create_and_delete(self):
@@ -161,6 +157,14 @@ class ExperienceAPITest(RoleSetupMixin, APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_date_only_end_date_is_accepted(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(
+            self.list_url,
+            {**self.payload, "started_at": "2025-01-01", "ended_at": "2025-06-01"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)        
 
 class SkillAPITest(RoleSetupMixin, APITestCase):
     def setUp(self):
@@ -212,7 +216,7 @@ class SkillAPITest(RoleSetupMixin, APITestCase):
         self.client.force_authenticate(user=self.owner)
         cases = [
             ({"name": " "}, "name"),
-            ({"name": "<script>alert(1)</script>"}, "name"),
+            ({"name": "<b></b>"}, "name"),
             ({"proficiency": 9}, "proficiency"),
             ({"category": "wizardry"}, "category"),
         ]
@@ -232,3 +236,13 @@ class SkillAPITest(RoleSetupMixin, APITestCase):
         self.assertEqual(response.data["endorse_count"], 1)
         response = self.client.post(self.endorse_url)
         self.assertFalse(response.data["is_endorsed"])
+
+    def test_script_tags_are_stripped_from_name(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(
+            self.list_url,
+            {**self.payload, "name": "<script>alert(1)</script>Python 2"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotIn("<", response.data["name"])        

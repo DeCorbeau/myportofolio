@@ -1,10 +1,19 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
-    """Read: everyone. PUT/PATCH: owner or Editor. POST/DELETE: owner only."""
+class IsPortfolioOwnerOrReadOnly(BasePermission):
+    """Read: semua orang. Tulis (POST/PUT/PATCH/DELETE): hanya pemilik."""
 
-    change_perm = None  # diisi subclass, mis. "main.change_experience"
+    message = "Only the portfolio owner can change this."
+
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS or request.user.is_superuser
+
+
+class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
+    """Read: semua. PUT/PATCH: pemilik atau Editor. POST/DELETE: pemilik saja."""
+
+    change_perm = None  # diisi subclass
     message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
@@ -20,10 +29,6 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
             and self.change_perm is not None
             and user.has_perm(self.change_perm)
         )
-
-
-class CanManageExperience(IsPortfolioOwnerOrEditorOrReadOnly):
-    change_perm = "main.change_experience"
 
 
 class CanManageSkill(IsPortfolioOwnerOrEditorOrReadOnly):

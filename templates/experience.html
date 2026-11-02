@@ -38,10 +38,8 @@
 
   {% if user.is_superuser %}
     {% include "components/experience_form_modal.html" %}
-    {% include "components/experience_delete_modal.html" %}
-  {% endif %}
-  {% if perms.main.change_experience %}
     {% include "components/experience_edit_modal.html" %}
+    {% include "components/experience_delete_modal.html" %}
   {% endif %}
 
   <script>
@@ -53,7 +51,6 @@
     const ZERO_ID = '00000000-0000-0000-0000-000000000000';
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === 'true';
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === 'true';
-    const CAN_EDIT = "{% if perms.main.change_experience %}true{% else %}false{% endif %}" === 'true';
     const FIELDS = ['title', 'organization', 'description', 'category', 'thumbnail', 'started_at', 'ended_at'];
 
     const loadingState = document.getElementById('loading');
@@ -136,7 +133,7 @@
         : `<a href="${LOGIN_URL}" class="button button-like">
              <span aria-hidden="true">♥</span> Login to like
              <span class="like-count">${exp.like_count}</span></a>`;
-      const edit = CAN_EDIT
+      const edit = IS_SUPERUSER
         ? `<div class="skill-actions"><button type="button" class="button button-secondary"
              data-action="edit" data-id="${escapeHtml(exp.id)}">Edit</button></div>` : '';
       const remove = IS_SUPERUSER
