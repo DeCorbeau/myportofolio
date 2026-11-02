@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm, TextInput, Textarea, Select, URLInput, DateInput
+from django.forms import ModelForm, TextInput, Textarea, Select, URLInput, DateInput, FileInput
 from django.utils.html import strip_tags
 
 from main.models import Skill, Experience
@@ -73,16 +73,19 @@ class ExperienceForm(ModelForm):
             "organization": "Organization",
             "description": "Description (one bullet point per line)",
             "category": "Category",
-            "thumbnail": "Logo / Thumbnail URL",
+            "thumbnail_image": "Logo / Thumbnail (optional)",
             "started_at": "Start Date",
             "ended_at": "End Date (leave blank if ongoing)",
         }
+        help_texts = {
+            "thumbnail_image": "Optional image file, max 2 MB. A letter placeholder is shown if empty.",
+        }        
         widgets = {
             "title": TextInput(attrs={"placeholder": "Person in Charge (PIC) of Ambassador Division"}),
             "organization": TextInput(attrs={"placeholder": "Open House Fasilkom UI 2026"}),
             "description": Textarea(attrs={"placeholder": "One achievement per line...", "rows": 5}),
             "category": Select(),
-            "thumbnail": URLInput(attrs={"placeholder": "https://..."}),
+            "thumbnail_image": FileInput(attrs={"accept": "image/*"}),
             "started_at": DateInput(attrs={"type": "date"}),
             "ended_at": DateInput(attrs={"type": "date"}),
         }

@@ -12,12 +12,13 @@ class ExperienceSerializer(serializers.ModelSerializer):
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     liked_by_names = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Experience
         fields = [
             "id", "title", "organization", "description", "category",
-            "category_display", "thumbnail", "started_at", "ended_at",
+            "category_display", "thumbnail", "thumbnail_image", "thumbnail_url", "started_at", "ended_at",
             "is_ongoing", "date_range_display", "description_points",
             "like_count", "is_liked", "liked_by_names",
         ]
@@ -59,6 +60,15 @@ class ExperienceSerializer(serializers.ModelSerializer):
     def get_liked_by_names(self, obj):
         return ", ".join(user.username for user in obj.liked_by.all())
 
+    def validate_thumbnail_image(self, value):
+        if value and value.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError("Image must be 2 MB or smaller.")
+        return value
+
+    def get_thumbnail_url(self, obj):
+        if obj.thumbnail_image:
+            return obj.thumbnail_image.url
+        return obj.thumbnail or ""    
 
 class SkillSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source="get_category_display", read_only=True)
