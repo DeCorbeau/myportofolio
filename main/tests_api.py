@@ -1,8 +1,16 @@
 import datetime
 import uuid
+import tempfile
+
+from io import BytesIO
 
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
+
+from PIL import Image
+
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -181,6 +189,24 @@ class ExperienceAPITest(RoleSetupMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.experience.refresh_from_db()
         self.assertEqual(self.experience.title, "New experience")
+
+    @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+    def test_owner_can_upload_image_and_bad_file_is_rejected(self):
+        self.client.force_authenticate(user=self.owner)
+        data = {k: v for k, v in self.payload.items() if k != "thumbnail"}
+
+        buffer = BytesIO()
+        Image.new("RGB", (1, 1)).save(buffer, "PNG")
+        image = SimpleUploadedFile("logo.png", buffer.getvalue(), content_type="image/png")
+        response = self.client.post(self.list_url, {**data, "thumbnail_image": image}, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["thumbnail_url"].endswith(".png"))
+
+        fake = SimpleUploadedFile("evil.png", b"<script>alert(1)</script>", content_type="image/png")
+        response = self.client.post(self.list_url, {**data, "thumbnail_image": fake}, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("thumbnail_image", response.data)
+        self.assertEqual(Experience.objects.count(), 2)
 
 class SkillAPITest(RoleSetupMixin, APITestCase):
     def setUp(self):
