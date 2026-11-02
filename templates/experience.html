@@ -51,7 +51,7 @@
     const ZERO_ID = '00000000-0000-0000-0000-000000000000';
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === 'true';
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === 'true';
-    const FIELDS = ['title', 'organization', 'description', 'category', 'thumbnail', 'started_at', 'ended_at'];
+    const FIELDS = ['title', 'organization', 'description', 'category', 'started_at', 'ended_at'];
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -91,14 +91,13 @@
 
     // Satu pintu untuk semua POST/PATCH/DELETE: JSON, token CSRF, dan error ditangani konsisten
     async function writeExperience(url, method, payload) {
+      const isForm = payload instanceof FormData;
+      const headers = { Accept: 'application/json', 'X-CSRFToken': getCookie('csrftoken') };
+      if (payload !== undefined && !isForm) headers['Content-Type'] = 'application/json';
       const response = await fetch(url, {
         method,
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: payload === undefined ? undefined : JSON.stringify(payload),
+        headers, // untuk FormData, browser mengisi Content-Type dan boundary sendiri
+        body: payload === undefined ? undefined : (isForm ? payload : JSON.stringify(payload)),
       });
       if (response.status === 204) return null;
       const data = await response.json().catch(() => ({}));
@@ -107,11 +106,13 @@
     }
 
     function collectPayload(form) {
-      const data = new FormData(form);
-      const payload = {};
-      FIELDS.forEach(name => { payload[name] = data.get(name); });
-      payload.ended_at = payload.ended_at || null; // kosong = masih berjalan
-      return payload;
+      const raw = new FormData(form);
+      const data = new FormData();
+      ['title', 'organization', 'description', 'category', 'started_at', 'ended_at']
+        .forEach(name => data.append(name, raw.get(name) ?? ''));
+      const file = raw.get('thumbnail_image');
+      if (file instanceof File && file.size > 0) data.append('thumbnail_image', file);
+      return data;
     }
 
     function buildItem(exp) {
@@ -119,8 +120,10 @@
       item.className = 'timeline-item';
       item.dataset.category = exp.category;
 
-      const thumb = exp.thumbnail
-        ? `<img src="${escapeHtml(exp.thumbnail)}" alt="${escapeHtml(exp.title)}">` : '';
+      const initial = (exp.title || '?').trim().charAt(0).toUpperCase();
+      const thumb = exp.thumbnail_url
+        ? `<img src="${escapeHtml(exp.thumbnail_url)}" alt="${escapeHtml(exp.title)}">`
+        : `<span class="timeline-dot__placeholder" aria-hidden="true">${escapeHtml(initial)}</span>`;
       const org = exp.organization ? `<p class="org-name">${escapeHtml(exp.organization)}</p>` : '';
       const points = exp.description_points.map(p => `<li>${escapeHtml(p)}</li>`).join('');
       const likeTitle = exp.like_count > 0
@@ -209,7 +212,7 @@
       editForm.elements.organization.value = exp.organization;
       editForm.elements.description.value = exp.description;
       editForm.elements.category.value = exp.category;
-      editForm.elements.thumbnail.value = exp.thumbnail || '';
+      editForm.elements.thumbnail_image.value = '';
       editForm.elements.started_at.value = exp.started_at;
       editForm.elements.ended_at.value = exp.ended_at ? exp.ended_at.slice(0, 10) : '';
       document.getElementById('edit-experience-modal').showPopover();

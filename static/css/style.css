@@ -1230,3 +1230,15 @@ body {
 .timeline-item:hover .timeline-card {
     border-color: color-mix(in srgb, var(--cat, var(--accent-purple)) 50%, transparent);
 }
+
+.timeline-dot__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--cat, var(--accent-purple));
+    background: color-mix(in srgb, var(--cat, var(--accent-purple)) 18%, var(--bg-main));
+}
