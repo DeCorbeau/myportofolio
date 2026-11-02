@@ -176,7 +176,7 @@
         byCategory.get(skill.category).push(skill);
       });
       const present = CATEGORIES.filter(c => byCategory.has(c.code));
-      if (openCategories === null && present.length) openCategories = new Set([present[0].code]);
+      if (openCategories === null) openCategories = new Set();
 
       // saat mencari, semua grup yang cocok dibuka; tanpa pencarian, ingat pilihan pengguna
       const groups = present.map(c =>
