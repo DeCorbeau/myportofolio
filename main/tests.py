@@ -77,10 +77,42 @@ class PageTest(BaseTestCase):
         response = self.client.get(reverse("main:show_experience"), {"q": "intern"})
         self.assertContains(response, 'value="intern"')
 
-    def test_skill_page_still_renders_with_htmx(self):
+    def test_skill_page_is_only_a_skeleton(self):
+        # Data dimuat JS dari API, jadi HTML tidak boleh memuat datanya
         response = self.client.get(reverse("main:show_skill"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.skill.name)
+        self.assertTemplateUsed(response, "skill.html")
+        self.assertNotContains(response, self.skill.name)
+        for element_id in ("loading", "error", "empty", "skill-list"):
+            self.assertContains(response, f'id="{element_id}"')
+        self.assertContains(response, reverse("api:skill-list"))
+
+    def test_skill_search_box_is_prefilled_from_query(self):
+        response = self.client.get(reverse("main:show_skill"), {"q": "people"})
+        self.assertContains(response, 'value="people"')
+
+    def test_skill_modals_depend_on_role(self):
+        # (add, edit, delete): Editor boleh edit Skill, tapi tidak boleh tambah/hapus
+        expected = {
+            None: (False, False, False),
+            "regular": (False, False, False),
+            "editor": (False, True, False),
+            "owner": (True, True, True),
+        }
+        for username, (add, edit, delete) in expected.items():
+            self.client.logout()
+            if username:
+                self.login_as(username)
+            response = self.client.get(reverse("main:show_skill"))
+            for modal_id, shown in (
+                ("add-skill-modal", add),
+                ("edit-skill-modal", edit),
+                ("delete-skill-modal", delete),
+            ):
+                if shown:
+                    self.assertContains(response, f'id="{modal_id}"', msg_prefix=str(username))
+                else:
+                    self.assertNotContains(response, f'id="{modal_id}"', msg_prefix=str(username))
 
     def test_experience_modals_depend_on_role(self):
         # (add, edit, delete) yang harus muncul untuk tiap peran
