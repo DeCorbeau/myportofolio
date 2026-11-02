@@ -9,22 +9,12 @@
   <main>
     <section class="skill-section" id="skill">
       <div class="section-container">
-        <!-- Pressing Enter or the button searches right away; typing searches after 300 ms -->
-        <form id="skill-search-form" class="skill-search"
-              hx-get="{% url 'main:search_skill' %}"
-              hx-target="#skill-list"
-              hx-swap="innerHTML"
-              hx-indicator="#search-indicator"
-              data-error-title="Search failed">
+        <form id="skill-search-form" class="skill-search">
           <input type="search" id="search-input" name="q" value="{{ query }}"
                  placeholder="Search skill by name" aria-label="Search skill by name"
-                 class="skill-search__input"
-                 hx-get="{% url 'main:search_skill' %}"
-                 hx-trigger="input changed delay:300ms, search"
-                 hx-sync="this:replace">
+                 class="skill-search__input">
           <button type="submit" class="button">Search</button>
         </form>
-        <span id="search-indicator" class="htmx-indicator">Searching...</span>
 
         <div class="section-header skill-header">
           <div>
@@ -32,23 +22,307 @@
             <h1 class="section-title">Skills</h1>
           </div>
           {% if user.is_superuser %}
-          <button type="button"
-                  class="button"
-                  popovertarget="add-skill-modal">
+          <button type="button" class="button" popovertarget="add-skill-modal">
             <span aria-hidden="true">+</span> Add Skill
           </button>
           {% endif %}
         </div>
 
-        <!-- Skill groups: rendered by the server, replaced by HTMX -->
-        <div id="skill-list">
-          {% include "components/skill_groups.html" %}
-        </div>
+        <div id="loading" class="empty-state hide"><p>Loading skills...</p></div>
+        <div id="error" class="empty-state hide"><p>Failed to load skills. Please try again.</p></div>
+        <div id="empty" class="empty-state hide"><p id="empty-message">No skills have been added yet.</p></div>
+        <div id="skill-list" class="hide"></div>
       </div>
     </section>
   </main>
 
   {% if user.is_superuser %}
     {% include "components/skill_form_modal.html" %}
+    {% include "components/skill_delete_modal.html" %}
   {% endif %}
+  {% if perms.main.change_skill %}
+    {% include "components/skill_edit_modal.html" %}
+  {% endif %}
+
+  {{ categories|json_script:"skill-categories" }}
+
+  <script>
+  (function () {
+    const LIST_URL = "{% url 'api:skill-list' %}";
+    const DETAIL_URL = "{% url 'api:skill-detail' '00000000-0000-0000-0000-000000000000' %}";
+    const ENDORSE_URL = "{% url 'api:skill-endorse' '00000000-0000-0000-0000-000000000000' %}";
+    const LOGIN_URL = "{% url 'main:login' %}";
+    const ZERO_ID = '00000000-0000-0000-0000-000000000000';
+    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === 'true';
+    const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === 'true';
+    const CAN_EDIT = "{% if perms.main.change_skill %}true{% else %}false{% endif %}" === 'true';
+    const CATEGORIES = JSON.parse(document.getElementById('skill-categories').textContent);
+    const FIELDS = ['name', 'category', 'proficiency', 'impact', 'context'];
+    const MAX_LEVEL = 4;
+
+    const loadingState = document.getElementById('loading');
+    const errorState = document.getElementById('error');
+    const emptyState = document.getElementById('empty');
+    const emptyMessage = document.getElementById('empty-message');
+    const listContainer = document.getElementById('skill-list');
+    const searchForm = document.getElementById('skill-search-form');
+    const searchInput = document.getElementById('search-input');
+    const addForm = document.getElementById('skill-form');
+    const editForm = document.getElementById('edit-skill-form');
+    const confirmDeleteButton = document.getElementById('confirm-delete-skill');
+
+    const skillsById = new Map();
+    let openCategories = null; // null = belum diinisialisasi (grup pertama dibuka)
+    let abortController;
+    let debounceTimer;
+    let editingId = null;
+    let deletingId = null;
+
+    const endpoint = (pattern, id) => pattern.replace(ZERO_ID, id);
+    const currentQuery = () => searchInput.value.trim();
+
+    function displaySection({ showLoading = false, showError = false, showEmpty = false, showList = false }) {
+      loadingState.classList.toggle('hide', !showLoading);
+      errorState.classList.toggle('hide', !showError);
+      emptyState.classList.toggle('hide', !showEmpty);
+      listContainer.classList.toggle('hide', !showList);
+    }
+
+    function apiErrorMessage(data, status) {
+      const messages = Object.entries(data || {}).flatMap(([key, value]) =>
+        [].concat(value)
+          .filter(item => typeof item === 'string')
+          .map(item => (key === 'detail' || key === 'non_field_errors') ? item : `${key}: ${item}`)
+      );
+      return messages.join(' ') || `Request failed (HTTP ${status}).`;
+    }
+
+    async function writeSkill(url, method, payload) {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+      if (response.status === 204) return null;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+      return data;
+    }
+
+    function collectPayload(form) {
+      const data = new FormData(form);
+      const payload = {};
+      FIELDS.forEach(name => { payload[name] = data.get(name); });
+      payload.proficiency = Number(payload.proficiency);
+      return payload;
+    }
+
+    function buildCard(skill) {
+      const card = document.createElement('article');
+      card.className = 'skill-card';
+      card.dataset.id = skill.id;
+
+      const bar = Array.from({ length: MAX_LEVEL }, (_, i) =>
+        `<span class="bar-segment${i < skill.proficiency ? ' filled' : ''}"></span>`).join('');
+      const impact = skill.impact ? `<p class="skill-impact">${escapeHtml(skill.impact)}</p>` : '';
+      const context = skill.context ? `<p class="skill-context">${escapeHtml(skill.context)}</p>` : '';
+      const endorseTitle = skill.endorse_count > 0
+        ? `Endorsed by ${skill.endorsed_by_names}` : 'Be the first to endorse';
+      const endorse = IS_AUTHENTICATED
+        ? `<button type="button" class="button button-endorse${skill.is_endorsed ? ' is-endorsed' : ''}"
+                   data-action="endorse" data-id="${escapeHtml(skill.id)}" title="${escapeHtml(endorseTitle)}">
+             <span aria-hidden="true">★</span> ${skill.is_endorsed ? 'Remove Endorsement' : 'Endorse'}
+             <span class="endorse-count">${skill.endorse_count}</span></button>`
+        : `<a href="${LOGIN_URL}" class="button button-endorse">
+             <span aria-hidden="true">★</span> Login to endorse
+             <span class="endorse-count">${skill.endorse_count}</span></a>`;
+      const edit = CAN_EDIT
+        ? `<div class="skill-actions"><button type="button" class="button button-secondary"
+             data-action="edit" data-id="${escapeHtml(skill.id)}">Edit</button></div>` : '';
+      const remove = IS_SUPERUSER
+        ? `<div class="skill-actions"><button type="button" class="button button-danger"
+             data-action="delete" data-id="${escapeHtml(skill.id)}">Delete Skill</button></div>` : '';
+
+      card.innerHTML = `
+        <h2>${escapeHtml(skill.name)}</h2>
+        <div class="proficiency-bar">${bar}</div>
+        <p class="proficiency-label">${escapeHtml(skill.proficiency_display)}</p>
+        ${impact}${context}
+        <div class="endorse-form">${endorse}</div>
+        ${edit}${remove}`;
+      return card;
+    }
+
+    function buildGroup(category, skills, isOpen) {
+      const group = document.createElement('div');
+      group.className = 'skill-category-group' + (isOpen ? ' open' : '');
+      group.dataset.category = category.code;
+      group.innerHTML = `
+        <button type="button" class="skill-category-summary"
+                aria-expanded="${isOpen}">${escapeHtml(category.label)}</button>
+        <div class="skill-collapse"><div class="skill-grid"></div></div>`;
+      group.querySelector('.skill-grid').replaceChildren(...skills.map(buildCard));
+      return group;
+    }
+
+    function renderGroups(skills, query) {
+      const byCategory = new Map();
+      skills.forEach(skill => {
+        if (!byCategory.has(skill.category)) byCategory.set(skill.category, []);
+        byCategory.get(skill.category).push(skill);
+      });
+      const present = CATEGORIES.filter(c => byCategory.has(c.code));
+      if (openCategories === null && present.length) openCategories = new Set([present[0].code]);
+
+      // saat mencari, semua grup yang cocok dibuka; tanpa pencarian, ingat pilihan pengguna
+      const groups = present.map(c =>
+        buildGroup(c, byCategory.get(c.code), query ? true : openCategories.has(c.code)));
+      listContainer.replaceChildren(...groups);
+      return groups.length;
+    }
+
+    async function fetchSkills(query = '') {
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+      try {
+        displaySection({ showLoading: true });
+        const url = new URL(LIST_URL, window.location.origin);
+        if (query) url.searchParams.set('q', query);
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+          signal: abortController.signal,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const skills = await response.json();
+        skillsById.clear();
+        skills.forEach(skill => skillsById.set(skill.id, skill));
+        const groupCount = renderGroups(skills, query);
+        emptyMessage.textContent = query
+          ? 'No skill matches that name.' : 'No skills have been added yet.';
+        displaySection({ showList: groupCount > 0, showEmpty: groupCount === 0 });
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error(error);
+        displaySection({ showError: true });
+      }
+    }
+
+    // --- tambah ---
+    async function addSkill(event) {
+      event.preventDefault();
+      const button = addForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const created = await writeSkill(LIST_URL, 'POST', collectPayload(addForm));
+        (openCategories ??= new Set()).add(created.category);
+        addForm.reset();
+        document.getElementById('add-skill-modal').hidePopover();
+        showToast('Success', 'New skill added successfully!', 'success');
+        await fetchSkills(currentQuery());
+      } catch (error) {
+        showToast('Failed to add skill', error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // --- edit (PATCH): Editor dan pemilik ---
+    function openEditModal(id) {
+      const skill = skillsById.get(id);
+      if (!skill) return;
+      editingId = id;
+      FIELDS.forEach(name => { editForm.elements[name].value = skill[name] ?? ''; });
+      document.getElementById('edit-skill-modal').showPopover();
+    }
+
+    async function saveEdit(event) {
+      event.preventDefault();
+      const button = editForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        await writeSkill(endpoint(DETAIL_URL, editingId), 'PATCH', collectPayload(editForm));
+        document.getElementById('edit-skill-modal').hidePopover();
+        showToast('Success', 'Skill updated successfully!', 'success');
+        await fetchSkills(currentQuery());
+      } catch (error) {
+        showToast('Failed to update skill', error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // --- hapus ---
+    function openDeleteModal(id) {
+      const skill = skillsById.get(id);
+      if (!skill) return;
+      deletingId = id;
+      document.getElementById('delete-skill-name').textContent = skill.name;
+      document.getElementById('delete-skill-modal').showPopover();
+    }
+
+    async function confirmDelete() {
+      confirmDeleteButton.disabled = true;
+      try {
+        await writeSkill(endpoint(DETAIL_URL, deletingId), 'DELETE');
+        showToast('Success', 'Skill deleted successfully!', 'success');
+        await fetchSkills(currentQuery());
+      } catch (error) {
+        showToast('Failed to delete skill', error.message, 'error');
+      } finally {
+        document.getElementById('delete-skill-modal').hidePopover();
+        confirmDeleteButton.disabled = false;
+      }
+    }
+
+    // --- buka-tutup grup, endorse, edit, hapus (event delegation) ---
+    listContainer.addEventListener('click', async function (event) {
+      const summary = event.target.closest('.skill-category-summary');
+      if (summary) {
+        const group = summary.closest('.skill-category-group');
+        const isOpen = group.classList.toggle('open');
+        summary.setAttribute('aria-expanded', isOpen);
+        if (!currentQuery() && openCategories) {
+          isOpen ? openCategories.add(group.dataset.category) : openCategories.delete(group.dataset.category);
+        }
+        return;
+      }
+
+      const button = event.target.closest('button[data-action]');
+      if (!button || button.disabled) return;
+      const { action, id } = button.dataset;
+      if (action === 'edit') return openEditModal(id);
+      if (action === 'delete') return openDeleteModal(id);
+
+      button.disabled = true;
+      try {
+        const updated = await writeSkill(endpoint(ENDORSE_URL, id), 'POST');
+        skillsById.set(updated.id, updated);
+        button.closest('.skill-card').replaceWith(buildCard(updated));
+      } catch (error) {
+        showToast('Could not update endorsement', error.message, 'error');
+        button.disabled = false;
+      }
+    });
+
+    if (addForm) addForm.addEventListener('submit', addSkill);
+    if (editForm) editForm.addEventListener('submit', saveEdit);
+    if (confirmDeleteButton) confirmDeleteButton.addEventListener('click', confirmDelete);
+
+    searchInput.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchSkills(currentQuery()), 300);
+    });
+    searchForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearTimeout(debounceTimer);
+      fetchSkills(currentQuery());
+    });
+
+    fetchSkills(currentQuery());
+  })();
+  </script>
 {% endblock content %}

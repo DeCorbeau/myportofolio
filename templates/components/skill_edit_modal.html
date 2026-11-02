@@ -1,0 +1,35 @@
+<div id="edit-skill-modal"
+     class="form-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="edit-skill-modal-title">
+  <button type="button"
+          class="form-modal__backdrop"
+          popovertarget="edit-skill-modal"
+          popovertargetaction="hide"
+          aria-label="Close edit skill form"></button>
+  <div class="form-modal__content">
+    <button type="button"
+            class="form-modal__close"
+            popovertarget="edit-skill-modal"
+            popovertargetaction="hide"
+            aria-label="Close edit skill form">&times;</button>
+    <h2 id="edit-skill-modal-title">Edit Skill</h2>
+    <form id="edit-skill-form" class="project-form">
+      {% for field in edit_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+      {% endfor %}
+      <div class="form-modal__actions">
+        <button type="button"
+                class="button button-secondary"
+                popovertarget="edit-skill-modal"
+                popovertargetaction="hide">Cancel</button>
+        <button type="submit" class="button">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
