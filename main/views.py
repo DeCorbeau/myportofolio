@@ -88,7 +88,8 @@ def show_experience(request):
         "short_name": "Faiz",
         "query": query,
         "form": ExperienceForm(),
-        "experiences": get_experiences(query, request.user),
+        # auto_id berbeda supaya id input form edit tidak bentrok dengan form tambah
+        "edit_form": ExperienceForm(auto_id="edit_experience_%s"),
     }
     return render(request, "experience.html", context)
 

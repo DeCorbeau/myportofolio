@@ -9,22 +9,12 @@
   <main>
     <section class="experience-section" id="experience">
       <div class="section-container">
-        <!-- Pressing Enter or the button searches right away; typing searches after 300 ms -->
-        <form id="experience-search-form" class="skill-search"
-              hx-get="{% url 'main:search_experience' %}"
-              hx-target="#experience-list"
-              hx-swap="innerHTML"
-              hx-indicator="#search-indicator"
-              data-error-title="Search failed">
+        <form id="experience-search-form" class="skill-search">
           <input type="search" id="search-input" name="q" value="{{ query }}"
                  placeholder="Search experience by name" aria-label="Search experience by name"
-                 class="skill-search__input"
-                 hx-get="{% url 'main:search_experience' %}"
-                 hx-trigger="input changed delay:300ms, search"
-                 hx-sync="this:replace">
+                 class="skill-search__input">
           <button type="submit" class="button">Search</button>
         </form>
-        <span id="search-indicator" class="htmx-indicator">Searching...</span>
 
         <div class="section-header skill-header">
           <div>
@@ -32,23 +22,275 @@
             <h1 class="section-title">Organizational Experience</h1>
           </div>
           {% if user.is_superuser %}
-          <button type="button"
-                  class="button"
-                  popovertarget="add-experience-modal">
+          <button type="button" class="button" popovertarget="add-experience-modal">
             <span aria-hidden="true">+</span> Add Experience
           </button>
           {% endif %}
         </div>
 
-        <!-- Experience timeline: rendered by the server, replaced by HTMX -->
-        <div id="experience-list" class="timeline">
-          {% include "components/experience_list.html" %}
-        </div>
+        <div id="loading" class="empty-state hide"><p>Loading experience...</p></div>
+        <div id="error" class="empty-state hide"><p>Failed to load experience. Please try again.</p></div>
+        <div id="empty" class="empty-state hide"><p id="empty-message">No experiences have been added yet.</p></div>
+        <div id="experience-list" class="timeline hide"></div>
       </div>
     </section>
   </main>
 
   {% if user.is_superuser %}
     {% include "components/experience_form_modal.html" %}
+    {% include "components/experience_delete_modal.html" %}
   {% endif %}
+  {% if perms.main.change_experience %}
+    {% include "components/experience_edit_modal.html" %}
+  {% endif %}
+
+  <script>
+  (function () {
+    const LIST_URL = "{% url 'api:experience-list' %}";
+    const DETAIL_URL = "{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}";
+    const LIKE_URL = "{% url 'api:experience-like' '00000000-0000-0000-0000-000000000000' %}";
+    const LOGIN_URL = "{% url 'main:login' %}";
+    const ZERO_ID = '00000000-0000-0000-0000-000000000000';
+    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === 'true';
+    const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === 'true';
+    const CAN_EDIT = "{% if perms.main.change_experience %}true{% else %}false{% endif %}" === 'true';
+    const FIELDS = ['title', 'organization', 'description', 'category', 'thumbnail', 'started_at', 'ended_at'];
+
+    const loadingState = document.getElementById('loading');
+    const errorState = document.getElementById('error');
+    const emptyState = document.getElementById('empty');
+    const emptyMessage = document.getElementById('empty-message');
+    const listContainer = document.getElementById('experience-list');
+    const searchForm = document.getElementById('experience-search-form');
+    const searchInput = document.getElementById('search-input');
+    const addForm = document.getElementById('experience-form');
+    const editForm = document.getElementById('edit-experience-form');
+    const confirmDeleteButton = document.getElementById('confirm-delete-experience');
+
+    const experiencesById = new Map();
+    let abortController;
+    let debounceTimer;
+    let editingId = null;
+    let deletingId = null;
+
+    const endpoint = (pattern, id) => pattern.replace(ZERO_ID, id);
+    const currentQuery = () => searchInput.value.trim();
+
+    function displaySection({ showLoading = false, showError = false, showEmpty = false, showList = false }) {
+      loadingState.classList.toggle('hide', !showLoading);
+      errorState.classList.toggle('hide', !showError);
+      emptyState.classList.toggle('hide', !showEmpty);
+      listContainer.classList.toggle('hide', !showList);
+    }
+
+    function apiErrorMessage(data, status) {
+      const messages = Object.entries(data || {}).flatMap(([key, value]) =>
+        [].concat(value)
+          .filter(item => typeof item === 'string')
+          .map(item => (key === 'detail' || key === 'non_field_errors') ? item : `${key}: ${item}`)
+      );
+      return messages.join(' ') || `Request failed (HTTP ${status}).`;
+    }
+
+    // Satu pintu untuk semua POST/PATCH/DELETE: JSON, token CSRF, dan error ditangani konsisten
+    async function writeExperience(url, method, payload) {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+      if (response.status === 204) return null;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+      return data;
+    }
+
+    function collectPayload(form) {
+      const data = new FormData(form);
+      const payload = {};
+      FIELDS.forEach(name => { payload[name] = data.get(name); });
+      payload.ended_at = payload.ended_at || null; // kosong = masih berjalan
+      return payload;
+    }
+
+    function buildItem(exp) {
+      const item = document.createElement('div');
+      item.className = 'timeline-item';
+      item.dataset.category = exp.category;
+
+      const thumb = exp.thumbnail
+        ? `<img src="${escapeHtml(exp.thumbnail)}" alt="${escapeHtml(exp.title)}">` : '';
+      const org = exp.organization ? `<p class="org-name">${escapeHtml(exp.organization)}</p>` : '';
+      const points = exp.description_points.map(p => `<li>${escapeHtml(p)}</li>`).join('');
+      const likeTitle = exp.like_count > 0
+        ? `Liked by ${exp.liked_by_names}` : 'Be the first to like';
+      const like = IS_AUTHENTICATED
+        ? `<button type="button" class="button button-like${exp.is_liked ? ' is-liked' : ''}"
+                   data-action="like" data-id="${escapeHtml(exp.id)}" title="${escapeHtml(likeTitle)}">
+             <span aria-hidden="true">♥</span> ${exp.is_liked ? 'Unlike' : 'Like'}
+             <span class="like-count">${exp.like_count}</span></button>`
+        : `<a href="${LOGIN_URL}" class="button button-like">
+             <span aria-hidden="true">♥</span> Login to like
+             <span class="like-count">${exp.like_count}</span></a>`;
+      const edit = CAN_EDIT
+        ? `<div class="skill-actions"><button type="button" class="button button-secondary"
+             data-action="edit" data-id="${escapeHtml(exp.id)}">Edit</button></div>` : '';
+      const remove = IS_SUPERUSER
+        ? `<div class="skill-actions"><button type="button" class="button button-danger"
+             data-action="delete" data-id="${escapeHtml(exp.id)}">Delete Experience</button></div>` : '';
+
+      item.innerHTML = `
+        <div class="timeline-dot">${thumb}</div>
+        <div class="timeline-card">
+          <div class="card-meta">
+            <span class="role-category">${escapeHtml(exp.category_display)}</span>
+            <span class="role-date">${escapeHtml(exp.date_range_display)}</span>
+          </div>
+          <h2 class="role-title">${escapeHtml(exp.title)}</h2>
+          ${org}
+          <ul class="role-desc-list">${points}</ul>
+          <div class="like-form">${like}</div>
+          ${edit}${remove}
+        </div>`;
+      return item;
+    }
+
+    async function fetchExperiences(query = '') {
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+      try {
+        displaySection({ showLoading: true });
+        const url = new URL(LIST_URL, window.location.origin);
+        if (query) url.searchParams.set('q', query);
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+          signal: abortController.signal,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const experiences = await response.json();
+        experiencesById.clear();
+        experiences.forEach(exp => experiencesById.set(exp.id, exp));
+        listContainer.replaceChildren(...experiences.map(buildItem));
+        emptyMessage.textContent = query
+          ? 'No experience matches that search.' : 'No experiences have been added yet.';
+        displaySection({ showList: experiences.length > 0, showEmpty: experiences.length === 0 });
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error(error);
+        displaySection({ showError: true });
+      }
+    }
+
+    // --- tambah ---
+    async function addExperience(event) {
+      event.preventDefault();
+      const button = addForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        await writeExperience(LIST_URL, 'POST', collectPayload(addForm));
+        addForm.reset();
+        document.getElementById('add-experience-modal').hidePopover();
+        showToast('Success', 'New experience added successfully!', 'success');
+        await fetchExperiences(currentQuery());
+      } catch (error) {
+        showToast('Failed to add experience', error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // --- edit (PATCH) ---
+    function openEditModal(id) {
+      const exp = experiencesById.get(id);
+      if (!exp) return;
+      editingId = id;
+      editForm.elements.title.value = exp.title;
+      editForm.elements.organization.value = exp.organization;
+      editForm.elements.description.value = exp.description;
+      editForm.elements.category.value = exp.category;
+      editForm.elements.thumbnail.value = exp.thumbnail || '';
+      editForm.elements.started_at.value = exp.started_at;
+      editForm.elements.ended_at.value = exp.ended_at ? exp.ended_at.slice(0, 10) : '';
+      document.getElementById('edit-experience-modal').showPopover();
+    }
+
+    async function saveEdit(event) {
+      event.preventDefault();
+      const button = editForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        await writeExperience(endpoint(DETAIL_URL, editingId), 'PATCH', collectPayload(editForm));
+        document.getElementById('edit-experience-modal').hidePopover();
+        showToast('Success', 'Experience updated successfully!', 'success');
+        await fetchExperiences(currentQuery());
+      } catch (error) {
+        showToast('Failed to update experience', error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // --- hapus ---
+    function openDeleteModal(id) {
+      const exp = experiencesById.get(id);
+      if (!exp) return;
+      deletingId = id;
+      document.getElementById('delete-experience-name').textContent = exp.title;
+      document.getElementById('delete-experience-modal').showPopover();
+    }
+
+    async function confirmDelete() {
+      confirmDeleteButton.disabled = true;
+      try {
+        await writeExperience(endpoint(DETAIL_URL, deletingId), 'DELETE');
+        showToast('Success', 'Experience deleted successfully!', 'success');
+        await fetchExperiences(currentQuery());
+      } catch (error) {
+        showToast('Failed to delete experience', error.message, 'error');
+      } finally {
+        document.getElementById('delete-experience-modal').hidePopover();
+        confirmDeleteButton.disabled = false;
+      }
+    }
+
+    // --- like + event delegation ---
+    listContainer.addEventListener('click', async function (event) {
+      const button = event.target.closest('button[data-action]');
+      if (!button || button.disabled) return;
+      const { action, id } = button.dataset;
+      if (action === 'edit') return openEditModal(id);
+      if (action === 'delete') return openDeleteModal(id);
+
+      button.disabled = true;
+      try {
+        const updated = await writeExperience(endpoint(LIKE_URL, id), 'POST');
+        experiencesById.set(updated.id, updated);
+        button.closest('.timeline-item').replaceWith(buildItem(updated));
+      } catch (error) {
+        showToast('Could not update like', error.message, 'error');
+        button.disabled = false;
+      }
+    });
+
+    if (addForm) addForm.addEventListener('submit', addExperience);
+    if (editForm) editForm.addEventListener('submit', saveEdit);
+    if (confirmDeleteButton) confirmDeleteButton.addEventListener('click', confirmDelete);
+
+    searchInput.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchExperiences(currentQuery()), 300);
+    });
+    searchForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearTimeout(debounceTimer);
+      fetchExperiences(currentQuery());
+    });
+
+    fetchExperiences(currentQuery());
+  })();
+  </script>
 {% endblock content %}
