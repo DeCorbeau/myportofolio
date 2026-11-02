@@ -1,0 +1,88 @@
+<div class="timeline-item" data-category="{{ experience.category }}">
+  <div class="timeline-dot">{% if experience.thumbnail %}<img src="{{ experience.thumbnail }}" alt="{{ experience.title }}">{% endif %}</div>
+  <div class="timeline-card">
+    <div class="card-meta">
+      <span class="role-category">{{ experience.get_category_display }}</span>
+      <span class="role-date">{{ experience.date_range_display }}</span>
+    </div>
+    <h2 class="role-title">{{ experience.title }}</h2>
+    {% if experience.organization %}<p class="org-name">{{ experience.organization }}</p>{% endif %}
+    <ul class="role-desc-list">
+      {% for point in experience.description_points %}<li>{{ point }}</li>{% endfor %}
+    </ul>
+
+    <form class="like-form"
+          hx-post="{% url 'main:toggle_like' experience.id %}"
+          hx-target="closest .timeline-item"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button"
+          data-error-title="Could not update like">
+      <button type="submit"
+              class="button button-like{% if experience.is_liked %} is-liked{% endif %}"
+              title="{% if experience.like_count %}Liked by {{ experience.liked_by_names }}{% else %}Be the first to like{% endif %}">
+        <span aria-hidden="true">♥</span>
+        {% if experience.is_liked %}Unlike{% else %}Like{% endif %}
+        <span class="like-count">{{ experience.like_count }}</span>
+      </button>
+    </form>
+
+    {% if perms.main.change_experience %}
+    <div class="skill-actions">
+      <button type="button"
+              class="button button-secondary"
+              hx-get="{% url 'main:edit_experience' experience.id %}"
+              hx-target="closest .timeline-item"
+              hx-swap="outerHTML"
+              data-error-title="Could not open the edit form">Edit</button>
+    </div>
+    {% endif %}
+
+    {% if user.is_superuser %}
+    <div class="skill-actions">
+      <button type="button"
+              class="button button-danger"
+              popovertarget="delete-experience-modal-{{ experience.id }}"
+              title="Delete experience">Delete Experience</button>
+    </div>
+
+    <div id="delete-experience-modal-{{ experience.id }}"
+         class="skill-delete-modal"
+         popover="auto"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="delete-experience-title-{{ experience.id }}">
+      <button type="button"
+              class="skill-delete-modal__backdrop"
+              popovertarget="delete-experience-modal-{{ experience.id }}"
+              popovertargetaction="hide"
+              aria-label="Close delete confirmation"></button>
+      <div class="skill-delete-modal__content">
+        <button type="button"
+                class="skill-delete-modal__close"
+                popovertarget="delete-experience-modal-{{ experience.id }}"
+                popovertargetaction="hide"
+                aria-label="Close delete confirmation">&times;</button>
+        <h2 id="delete-experience-title-{{ experience.id }}">Delete Experience?</h2>
+        <p>
+          Are you sure you want to delete
+          <strong>{{ experience.title }}</strong>?
+        </p>
+        <div class="skill-delete-modal__actions">
+          <button type="button"
+                  class="button button-secondary"
+                  popovertarget="delete-experience-modal-{{ experience.id }}"
+                  popovertargetaction="hide">Cancel</button>
+          <form hx-delete="{% url 'main:delete_experience' experience.id %}"
+                hx-target="closest .timeline-item"
+                hx-swap="outerHTML"
+                hx-disabled-elt="find button"
+                hx-on::response-error="this.closest('[popover]').hidePopover()"
+                data-error-title="Failed to delete experience">
+            <button type="submit" class="button button-danger">Yes, Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>

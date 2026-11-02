@@ -9,12 +9,22 @@
   <main>
     <section class="experience-section" id="experience">
       <div class="section-container">
-        <form id="experience-search-form" class="skill-search">
+        <!-- Pressing Enter or the button searches right away; typing searches after 300 ms -->
+        <form id="experience-search-form" class="skill-search"
+              hx-get="{% url 'main:search_experience' %}"
+              hx-target="#experience-list"
+              hx-swap="innerHTML"
+              hx-indicator="#search-indicator"
+              data-error-title="Search failed">
           <input type="search" id="search-input" name="q" value="{{ query }}"
                  placeholder="Search experience by name" aria-label="Search experience by name"
-                 class="skill-search__input">
+                 class="skill-search__input"
+                 hx-get="{% url 'main:search_experience' %}"
+                 hx-trigger="input changed delay:300ms, search"
+                 hx-sync="this:replace">
           <button type="submit" class="button">Search</button>
         </form>
+        <span id="search-indicator" class="htmx-indicator">Searching...</span>
 
         <div class="section-header skill-header">
           <div>
@@ -30,310 +40,15 @@
           {% endif %}
         </div>
 
-        <!-- Loading State -->
-        <div id="loading" class="empty-state hide">
-          <p>Loading experiences...</p>
+        <!-- Experience timeline: rendered by the server, replaced by HTMX -->
+        <div id="experience-list" class="timeline">
+          {% include "components/experience_list.html" %}
         </div>
-        <!-- Error State -->
-        <div id="error" class="empty-state hide">
-          <p>Failed to load experiences. Please try again.</p>
-        </div>
-        <!-- Empty State -->
-        <div id="empty" class="empty-state hide">
-          <p id="empty-message">No experiences have been added yet.</p>
-        </div>
-        <!-- Experience Timeline (filled by JavaScript) -->
-        <div id="experience-list" class="timeline hide"></div>
       </div>
     </section>
   </main>
 
   {% if user.is_superuser %}
-    {% include "components/experience_delete_modal.html" %}
     {% include "components/experience_form_modal.html" %}
   {% endif %}
-
-  <script>
-    // Configuration
-    const EXPERIENCE_ENDPOINT = "{% url 'main:get_experience_json' %}";
-    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    const CAN_EDIT = "{{ perms.main.change_experience|yesno:'true,false' }}" === "true";
-    const CSRF_INPUT_HTML = `{% csrf_token %}`;
-    // Dummy UUID, replaced by the real ID from the JSON data
-    const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
-    const LIKE_URL = "{% url 'main:toggle_like_ajax' '00000000-0000-0000-0000-000000000000' %}";
-    const EDIT_URL = "{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}";
-    const DELETE_URL = "{% url 'main:delete_experience_ajax' '00000000-0000-0000-0000-000000000000' %}";  
-    let experienceAbortController;
-
-    // DOM elements
-    const loadingState = document.getElementById('loading');
-    const errorState = document.getElementById('error');
-    const emptyState = document.getElementById('empty');
-    const emptyMessage = document.getElementById('empty-message');
-    const listContainer = document.getElementById('experience-list');
-    const searchForm = document.getElementById('experience-search-form');
-    const searchInput = document.getElementById('search-input');
-    const SEARCH_DEBOUNCE_DELAY = 300;
-    let searchDebounceTimer;
-
-    // These only exist for superusers, so check before using them
-    const deleteModalForm = document.getElementById('delete-experience-form');
-    const deleteModalName = document.getElementById('delete-experience-name');
-
-    // Show only the relevant page section
-    function displayPageSection({ showLoading = false, showError = false,
-                                  showEmpty = false, showList = false }) {
-      loadingState.classList.toggle('hide', !showLoading);
-      errorState.classList.toggle('hide', !showError);
-      emptyState.classList.toggle('hide', !showEmpty);
-      listContainer.classList.toggle('hide', !showList);
-    }
-
-    // Build one timeline item from a JSON entry
-    function buildExperienceElement(item) {
-      const experience = item.fields;
-      const id = item.pk;
-
-      const element = document.createElement('div');
-      element.className = 'timeline-item';
-      element.dataset.category = experience.category;
-
-      const thumbnailHtml = experience.thumbnail
-        ? `<img src="${escapeHtml(experience.thumbnail)}" alt="${escapeHtml(experience.title)}">`
-        : '';
-
-      const organizationHtml = experience.organization
-        ? `<p class="org-name">${escapeHtml(experience.organization)}</p>`
-        : '';
-
-      const pointsHtml = experience.description_points
-        .map(point => `<li>${escapeHtml(point)}</li>`)
-        .join('');
-
-      const likeUrl = LIKE_URL.replace(DUMMY_ID, id);
-      const likedClass = experience.is_liked ? ' is-liked' : '';
-      const likeText = experience.is_liked ? 'Unlike' : 'Like';
-      const likeTitle = experience.like_count > 0
-        ? `Liked by ${escapeHtml(experience.liked_by_names)}`
-        : 'Be the first to like';
-
-      const editHtml = CAN_EDIT
-        ? `<div class="skill-actions">
-             <a href="${EDIT_URL.replace(DUMMY_ID, id)}" class="button button-secondary">Edit</a>
-           </div>`
-        : '';
-
-      const deleteHtml = IS_SUPERUSER
-        ? `<div class="skill-actions">
-             <button type="button"
-                     class="button button-danger js-delete-experience"
-                     popovertarget="delete-experience-modal"
-                     data-delete-url="${DELETE_URL.replace(DUMMY_ID, id)}"
-                     data-title="${escapeHtml(experience.title)}"
-                     title="Delete experience">Delete Experience</button>
-           </div>`
-        : '';
-
-      element.innerHTML = `
-        <div class="timeline-dot">${thumbnailHtml}</div>
-        <div class="timeline-card">
-          <div class="card-meta">
-            <span class="role-category">${escapeHtml(experience.category_display)}</span>
-            <span class="role-date">${escapeHtml(experience.date_range)}</span>
-          </div>
-          <h2 class="role-title">${escapeHtml(experience.title)}</h2>
-          ${organizationHtml}
-          <ul class="role-desc-list">${pointsHtml}</ul>
-          <form method="post" action="${likeUrl}" class="like-form">
-            ${CSRF_INPUT_HTML}
-            <button type="submit" class="button button-like${likedClass}" title="${likeTitle}">
-              <span aria-hidden="true">♥</span>
-              ${likeText}
-              <span class="like-count">${experience.like_count}</span>
-            </button>
-          </form>
-          ${editHtml}
-          ${deleteHtml}
-        </div>
-      `;
-      return element;
-    }
-
-    // Fetch experience data from the JSON endpoint
-    async function fetchExperiences(searchQuery = '', { silent = false } = {}) {
-      // Cancel the previous request so stale results never overwrite newer ones
-      if (experienceAbortController) experienceAbortController.abort();
-      experienceAbortController = new AbortController();
-
-      try {
-        // silent = refresh the list in place without flashing the loading state
-        if (!silent) displayPageSection({ showLoading: true });
-        const url = searchQuery
-          ? `${EXPERIENCE_ENDPOINT}?q=${encodeURIComponent(searchQuery)}`
-          : EXPERIENCE_ENDPOINT;
-
-        const response = await fetch(url, {
-          headers: { 'Accept': 'application/json' },
-          signal: experienceAbortController.signal,
-        });
-        if (!response.ok) throw new Error('Failed to fetch data');
-
-        const experienceData = await response.json();
-        if (experienceData.length === 0) {
-          emptyMessage.textContent = searchQuery
-            ? 'No experience matches that search.'
-            : 'No experiences have been added yet.';
-          displayPageSection({ showEmpty: true });
-        } else {
-          listContainer.innerHTML = '';
-          experienceData.forEach(item => {
-            listContainer.appendChild(buildExperienceElement(item));
-          });
-          displayPageSection({ showList: true });
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        console.error('Error loading experiences:', error);
-        displayPageSection({ showError: true });
-      }
-    }
-
-    // Fill the shared delete modal with the clicked experience
-    if (deleteModalForm && deleteModalName) {
-      listContainer.addEventListener('click', function (event) {
-        const button = event.target.closest('.js-delete-experience');
-        if (!button) return;
-        deleteModalForm.action = button.dataset.deleteUrl;
-        deleteModalName.textContent = button.dataset.title;
-      });
-    }
-
-    function searchExperiences() {
-      fetchExperiences(searchInput.value.trim());
-    }
-
-    // Debounce: wait until the user stops typing before sending a request
-    searchInput.addEventListener('input', function () {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(searchExperiences, SEARCH_DEBOUNCE_DELAY);
-    });
-
-    // Search button / Enter: cancel any pending timer, then search right away
-    searchForm.addEventListener('submit', function (event) {
-      event.preventDefault();
-      clearTimeout(searchDebounceTimer);
-      searchExperiences();
-    });
-
-    // Close the add-experience modal (used after a successful save)
-    function closeExperienceModal() {
-      document.getElementById('add-experience-modal').hidePopover();
-    }
-
-    const CREATE_EXPERIENCE_ENDPOINT = "{% url 'main:create_experience_ajax' %}";
-    const experienceForm = document.getElementById('experience-form');
-
-    // Send the form to the server with fetch (no page reload)
-    async function addExperience(event) {
-      event.preventDefault();
-      const submitButton = experienceForm.querySelector('button[type="submit"]');
-      submitButton.disabled = true; // prevent double submit
-
-      try {
-        const response = await fetch(CREATE_EXPERIENCE_ENDPOINT, {
-          method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') },
-          body: new FormData(experienceForm),
-        });
-        // .catch handles non-JSON replies (e.g. an HTML 403 page from CSRF failure)
-        const result = await response.json().catch(() => ({}));
-
-        if (response.ok) {
-          experienceForm.reset();
-          closeExperienceModal();
-          showToast('Success', 'New experience added successfully!', 'success');
-          fetchExperiences(searchInput.value.trim());
-        } else {
-          const errorMessages = result.errors
-            ? Object.entries(result.errors).flatMap(([field, errs]) =>
-                errs.map(error => `${field}: ${error.message}`))
-            : [result.message || `Something went wrong (status ${response.status}).`];
-          showToast('Failed to add experience', errorMessages.join(' '), 'error');
-        }
-      } catch (error) {
-        console.error('Error adding experience:', error);
-        showToast('Failed to add experience',
-                  'Could not reach the server. Please try again.', 'error');
-      } finally {
-        submitButton.disabled = false;
-      }
-    }
-
-    // The form only exists for superusers, so check before attaching
-    if (experienceForm) {
-      experienceForm.addEventListener('submit', addExperience);
-    }
-
-    // Delete without reloading the page
-    if (deleteModalForm) {
-      deleteModalForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
-        const submitButton = deleteModalForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true; // prevent double submit
-
-        try {
-          const response = await fetch(deleteModalForm.action, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-          });
-          const result = await response.json().catch(() => ({}));
-          document.getElementById('delete-experience-modal').hidePopover();
-
-          if (response.ok) {
-            showToast('Success', result.message || 'Experience deleted successfully!', 'success');
-            fetchExperiences(searchInput.value.trim(), { silent: true });
-          } else {
-            showToast('Failed to delete experience',
-                      result.message || `Something went wrong (status ${response.status}).`, 'error');
-          }
-        } catch (error) {
-          console.error('Error deleting experience:', error);
-          showToast('Failed to delete experience',
-                    'Could not reach the server. Please try again.', 'error');
-        } finally {
-          submitButton.disabled = false;
-        }
-      });
-    }
-
-    // Like / unlike without reloading the page
-    listContainer.addEventListener('submit', async function (event) {
-      const form = event.target.closest('.like-form');
-      if (!form) return;
-      event.preventDefault();
-
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        });
-        const result = await response.json().catch(() => ({}));
-
-        if (response.ok) {
-          fetchExperiences(searchInput.value.trim(), { silent: true });
-        } else {
-          showToast('Could not update like',
-                    result.message || `Something went wrong (status ${response.status}).`, 'error');
-        }
-      } catch (error) {
-        console.error('Error toggling like:', error);
-        showToast('Could not update like',
-                  'Could not reach the server. Please try again.', 'error');
-      }
-    });
-
-    // Start
-    fetchExperiences(searchInput.value.trim());
-  </script>
 {% endblock content %}

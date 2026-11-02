@@ -16,9 +16,15 @@
             popovertargetaction="hide"
             aria-label="Close add experience form">&times;</button>
     <h2 id="add-experience-modal-title">Add New Experience</h2>
+    <!-- hx-include sends the search box too, so the current filter is kept -->
     <form id="experience-form"
-          method="post"
-          action="{% url 'main:create_experience' %}"
+          hx-post="{% url 'main:create_experience' %}"
+          hx-include="#experience-search-form"
+          hx-target="#experience-list"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('add-experience-modal').hidePopover(); }"
+          data-error-title="Failed to add experience"
           class="project-form">
       {% csrf_token %}
       {% for field in form %}

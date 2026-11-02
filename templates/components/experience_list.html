@@ -1,0 +1,7 @@
+{% for experience in experiences %}
+  {% include "components/experience_item.html" %}
+{% empty %}
+  <div class="empty-state">
+    <p>{% if query %}No experience matches that search.{% else %}No experiences have been added yet.{% endif %}</p>
+  </div>
+{% endfor %}

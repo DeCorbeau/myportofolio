@@ -2,12 +2,10 @@ import datetime
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse, QueryDict
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse, QueryDict
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from main.forms import ExperienceForm, SkillForm
@@ -39,123 +37,149 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
+
+# ---------------------------------------------------------------------------
+# Experience (HTMX): every view below returns an HTML fragment, not a full page
+# ---------------------------------------------------------------------------
+
+def annotate_experience(experience, user):
+    """Attach the per-user like state that the card template needs."""
+    likers = list(experience.liked_by.all())
+    experience.like_count = len(likers)
+    experience.is_liked = user.is_authenticated and user in likers
+    experience.liked_by_names = ", ".join(u.username for u in likers)
+    return experience
+
+
+def fetch_experience(experience_id):
+    """Load one experience with its likers, or None if it does not exist."""
+    return (
+        Experience.objects.prefetch_related("liked_by")
+        .filter(pk=experience_id)
+        .first()
+    )
+
+
+def get_experiences(query, user):
+    experiences = Experience.objects.prefetch_related("liked_by").all()
+    if query:
+        experiences = experiences.filter(
+            Q(title__icontains=query) | Q(organization__icontains=query)
+        )
+    return [annotate_experience(experience, user) for experience in experiences]
+
+
+def render_experience_list(request, query):
+    context = {
+        "query": query,
+        "experiences": get_experiences(query, request.user),
+    }
+    return render(request, "components/experience_list.html", context)
+
+
+def render_experience_item(request, experience):
+    context = {"experience": annotate_experience(experience, request.user)}
+    return render(request, "components/experience_item.html", context)
+
+
 def show_experience(request):
     query = request.GET.get("q", "").strip()
     context = {
         "short_name": "Faiz",
         "query": query,
         "form": ExperienceForm(),
+        "experiences": get_experiences(query, request.user),
     }
     return render(request, "experience.html", context)
 
-@login_required(login_url="/login/")
+
+@require_GET
+def search_experience(request):
+    return render_experience_list(request, request.GET.get("q", "").strip())
+
+
+@require_POST
 def create_experience(request):
+    # No @login_required: it would redirect to an HTML login page, and HTMX
+    # would swap that page into the list. AnonymousUser.is_superuser is False,
+    # so this one check rejects guests and normal users with a plain 403.
     if not request.user.is_superuser:
-        raise PermissionDenied
-    form = ExperienceForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Experience added successfully!")
-        return redirect("main:show_experience")
-    context = {
-        "name": "Faiz Yusuf Elriki",
-        "short_name": "Faiz",
-        "form": form,
-    }
-    return render(request, "experience_form.html", context)
-
-
-@require_POST
-def create_experience_ajax(request):
-    # No @login_required here: it would redirect to an HTML login page, which
-    # fetch() follows and JavaScript cannot recognise as a failure. AnonymousUser
-    # has is_superuser == False, so this one check rejects guests and normal users.
-    if not request.user.is_superuser:
-        return JsonResponse(
-            {"message": "Only the portfolio owner can add experience."},
-            status=403,
-        )
+        return plain_error("Only the portfolio owner can add experience.", 403)
     form = ExperienceForm(request.POST)
-    if form.is_valid():
-        experience = form.save()
-        return JsonResponse(
-            {"message": "Experience added successfully.", "pk": str(experience.id)},
-            status=201,
-        )
-    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    if not form.is_valid():
+        return plain_error(form_errors_text(form), 400)
+    form.save()
+    # The add form includes the search box (hx-include), so keep the filter.
+    response = render_experience_list(request, request.POST.get("q", "").strip())
+    return with_toast(response, "Success", "New experience added successfully!")
 
 
-@login_required(login_url="/login/")
-@permission_required("main.change_experience", raise_exception=True)
+@require_GET
+def experience_card(request, experience_id):
+    experience = fetch_experience(experience_id)
+    if experience is None:
+        return plain_error("Experience not found.", 404)
+    return render_experience_item(request, experience)
+
+
+@require_GET
+def edit_experience(request, experience_id):
+    if not request.user.has_perm("main.change_experience"):
+        return plain_error("You do not have permission to edit experience.", 403)
+    experience = fetch_experience(experience_id)
+    if experience is None:
+        return plain_error("Experience not found.", 404)
+    # auto_id keeps the field ids unique when several forms are on the page
+    form = ExperienceForm(
+        instance=experience, auto_id=f"edit_experience_{experience.id}_%s"
+    )
+    context = {"experience": experience, "form": form}
+    return render(request, "components/experience_edit_item.html", context)
+
+
+@require_http_methods(["PUT"])
 def update_experience(request, experience_id):
-    experience = get_object_or_404(Experience, pk=experience_id)
-    form = ExperienceForm(request.POST or None, instance=experience)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Experience updated successfully!")
-        return redirect("main:show_experience")
-    context = {
-        "name": "Faiz Yusuf Elriki",
-        "short_name": "Faiz",
-        "form": form,
-        "experience": experience,
-    }
-    return render(request, "experience_form.html", context)
+    if not request.user.has_perm("main.change_experience"):
+        return plain_error("You do not have permission to edit experience.", 403)
+    experience = fetch_experience(experience_id)
+    if experience is None:
+        return plain_error("Experience not found.", 404)
+    # Django only fills request.POST for POST, so parse the PUT body ourselves.
+    form = ExperienceForm(QueryDict(request.body), instance=experience)
+    if not form.is_valid():
+        return plain_error(form_errors_text(form), 400)
+    form.save()
+    response = render_experience_item(request, fetch_experience(experience_id))
+    return with_toast(response, "Success", "Experience updated successfully!")
 
-def get_experience_json(request):
-    query = request.GET.get("q", "").strip()
-    experiences = Experience.objects.prefetch_related("liked_by").all()
-    if query:
-        experiences = experiences.filter(
-            Q(title__icontains=query) | Q(organization__icontains=query)
-        )
 
-    # Build the JSON manually so we can include per-user like state
-    data = []
-    for experience in experiences:
-        liked_users = list(experience.liked_by.all())
-        is_liked = request.user.is_authenticated and request.user in liked_users
-        data.append({
-            "pk": str(experience.id),
-            "fields": {
-                "title": experience.title,
-                "organization": experience.organization,
-                "category": experience.category,
-                "category_display": experience.get_category_display(),
-                "date_range": experience.date_range_display,
-                "description_points": experience.description_points,
-                "thumbnail": experience.thumbnail,
-                "like_count": len(liked_users),
-                "is_liked": is_liked,
-                "liked_by_names": ", ".join(u.username for u in liked_users),
-            },
-        })
-    return JsonResponse(data, safe=False)
-
-@require_POST
-def delete_experience_ajax(request, experience_id):
+@require_http_methods(["DELETE"])
+def delete_experience(request, experience_id):
     if not request.user.is_superuser:
-        return JsonResponse({"message": "Only the portfolio owner can delete experience."}, status=403)
+        return plain_error("Only the portfolio owner can delete experience.", 403)
     experience = Experience.objects.filter(pk=experience_id).first()
     if experience is None:
-        return JsonResponse({"message": "Experience not found."}, status=404)
+        return plain_error("Experience not found.", 404)
     experience.delete()
-    return JsonResponse({"message": "Experience deleted successfully!"})
+    # Status 200 with an empty body: HTMX swaps the card for nothing.
+    # A 204 would not be swapped, so the card would stay on the page.
+    return with_toast(
+        HttpResponse(""), "Success", "Experience deleted successfully!"
+    )
+
 
 @require_POST
-def toggle_like_ajax(request, experience_id):
+def toggle_like(request, experience_id):
     if not request.user.is_authenticated:
-        return JsonResponse({"message": "Please log in to like an experience."}, status=401)
+        return plain_error("Please log in to like an experience.", 401)
     experience = Experience.objects.filter(pk=experience_id).first()
     if experience is None:
-        return JsonResponse({"message": "Experience not found."}, status=404)
+        return plain_error("Experience not found.", 404)
     if experience.liked_by.filter(pk=request.user.pk).exists():
         experience.liked_by.remove(request.user)
-        is_liked = False
     else:
         experience.liked_by.add(request.user)
-        is_liked = True
-    return JsonResponse({"is_liked": is_liked, "like_count": experience.liked_by.count()})
+    return render_experience_item(request, fetch_experience(experience_id))
 
 
 # ---------------------------------------------------------------------------
@@ -189,20 +213,14 @@ def build_skill_groups(query, user, open_codes=()):
     for skill in skills:
         by_category.setdefault(skill.category, []).append(annotate_skill(skill, user))
 
-    # Known categories first, in SKILL_CATEGORIES order. Any category outside
-    # the choices (e.g. from old seed data) goes last instead of being dropped.
-    known = [code for code, _ in Skill.SKILL_CATEGORIES]
-    extra = [code for code in by_category if code not in known]
-
     return [
         {
             "code": code,
-            # get_category_display() falls back to the raw value for unknown codes
-            "label": by_category[code][0].get_category_display(),
+            "label": label,
             "skills": by_category[code],
             "open": bool(query) or code in open_codes,
         }
-        for code in known + extra
+        for code, label in Skill.SKILL_CATEGORIES
         if code in by_category
     ]
 
@@ -313,6 +331,10 @@ def toggle_endorse(request, skill_id):
     return render_skill_card(request, fetch_skill(skill_id))
 
 
+# ---------------------------------------------------------------------------
+# Auth (unchanged)
+# ---------------------------------------------------------------------------
+
 def register(request):
     form = UserCreationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -322,6 +344,7 @@ def register(request):
     context = {"form": form,
                "short_name": "Faiz"}
     return render(request, "register.html", context)
+
 
 def login_user(request):
     form = AuthenticationForm(request, data=request.POST or None)
@@ -334,8 +357,9 @@ def login_user(request):
                "short_name": "Faiz"}
     return render(request, "login.html", context)
 
+
 def logout_user(request):
     logout(request)
-    response =  redirect("main:show_main")
+    response = redirect("main:show_main")
     response.delete_cookie("last_login")
     return response

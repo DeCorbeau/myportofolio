@@ -1,0 +1,27 @@
+<div class="timeline-item" data-category="{{ experience.category }}">
+  <div class="timeline-dot"></div>
+  <div class="timeline-card">
+    <form class="project-form"
+          hx-put="{% url 'main:update_experience' experience.id %}"
+          hx-target="closest .timeline-item"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          data-error-title="Failed to update experience">
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+      {% endfor %}
+      <div class="skill-actions">
+        <button type="submit" class="button">Save Changes</button>
+        <button type="button"
+                class="button button-secondary"
+                hx-get="{% url 'main:experience_card' experience.id %}"
+                hx-target="closest .timeline-item"
+                hx-swap="outerHTML"
+                data-error-title="Could not restore the experience">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

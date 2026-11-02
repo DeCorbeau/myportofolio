@@ -10,14 +10,15 @@ urlpatterns = [
     path("login/", views.login_user, name="login"),
     path("logout/", views.logout_user, name="logout"),
 
-    # Experience (still the old JavaScript version)
+    # Experience: the page, plus HTMX fragments
     path("experience/", views.show_experience, name="show_experience"),
-    path("api/experience/", views.get_experience_json, name="get_experience_json"),
+    path("experience/search/", views.search_experience, name="search_experience"),
     path("experience/add/", views.create_experience, name="create_experience"),
-    path("experience/add-ajax/", views.create_experience_ajax, name="create_experience_ajax"),
-    path("experience/<uuid:experience_id>/edit/", views.update_experience, name="update_experience"),
-    path("experience/<uuid:experience_id>/delete-ajax/", views.delete_experience_ajax, name="delete_experience_ajax"),
-    path("experience/<uuid:experience_id>/like-ajax/", views.toggle_like_ajax, name="toggle_like_ajax"),
+    path("experience/<uuid:experience_id>/card/", views.experience_card, name="experience_card"),
+    path("experience/<uuid:experience_id>/edit/", views.edit_experience, name="edit_experience"),
+    path("experience/<uuid:experience_id>/update/", views.update_experience, name="update_experience"),
+    path("experience/<uuid:experience_id>/delete/", views.delete_experience, name="delete_experience"),
+    path("experience/<uuid:experience_id>/like/", views.toggle_like, name="toggle_like"),
 
     # Skill: the page, plus HTMX fragments
     path("skill/", views.show_skill, name="show_skill"),
