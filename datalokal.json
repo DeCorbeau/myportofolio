@@ -12,11 +12,21 @@
     "started_at": "2026-02-01",
     "ended_at": null,
     "liked_by": [
-      1,
-      2,
-      4,
-      5,
-      6
+      [
+        "faiz0197"
+      ],
+      [
+        "faizy"
+      ],
+      [
+        "faizportofolio"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -33,10 +43,18 @@
     "started_at": "2026-05-05",
     "ended_at": "2026-09-01T00:00:00Z",
     "liked_by": [
-      2,
-      4,
-      5,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "faizportofolio"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -53,10 +71,18 @@
     "started_at": "2026-03-01",
     "ended_at": null,
     "liked_by": [
-      2,
-      4,
-      5,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "faizportofolio"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -73,9 +99,15 @@
     "started_at": "2025-08-01",
     "ended_at": "2025-12-19T00:00:00Z",
     "liked_by": [
-      2,
-      5,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -89,8 +121,12 @@
     "impact": "Served as the division's point of accountability, coordinating cross-divisional collaboration; also acted as liaison with Business Development and Digital Engagement teams.",
     "context": "PIC of Ambassador Division — Open House Fasilkom UI 2026; Ambassador Division Staff — Open House Fasilkom UI 2025",
     "endorsed_by": [
-      5,
-      6
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -104,8 +140,12 @@
     "impact": "",
     "context": "Learned through Platform Based Programming course, currently applied to build this portfolio website.",
     "endorsed_by": [
-      5,
-      6
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -119,7 +159,9 @@
     "impact": "Personally reached out to 25 schools and secured engagement from 3 major communities as part of a broader outreach effort.",
     "context": "Event Intern — RISTEK Summer Event 2026: Datathon 2026",
     "endorsed_by": [
-      6
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -133,8 +175,12 @@
     "impact": "Built the division's core operational infrastructure including MoUs, standard operating procedures, task guidebooks, and contingency mechanisms with defined triggers and decision flows to keep divisional operations resilient under pressure.",
     "context": "PIC of Ambassador Division — Open House Fasilkom UI 2026",
     "endorsed_by": [
-      2,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -148,7 +194,9 @@
     "impact": "Personally recruited approximately 15 of the 20 required mentors within 2-3 days.",
     "context": "Ambassador Division Staff — Open House Fasilkom UI 2025",
     "endorsed_by": [
-      6
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -162,8 +210,12 @@
     "impact": "",
     "context": "Learned through Programming Foundations 1 course, now being applied further in Django-based coursework.",
     "endorsed_by": [
-      2,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -177,8 +229,12 @@
     "impact": "Handled manpower allocation and logistics procurement for a 300+-attendee culminating event.",
     "context": "VPIC, Final Day — RISTEK Summer Event 2026: Datathon 2026",
     "endorsed_by": [
-      2,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -192,8 +248,12 @@
     "impact": "",
     "context": "Learned through Introduction to Operating Systems course, applying C to explore operating system concepts.",
     "endorsed_by": [
-      5,
-      6
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -207,8 +267,12 @@
     "impact": "Oversaw run-of-show execution, stakeholder seating, and real-time cue card adjustments as field coordinator.",
     "context": "Event Intern — RISTEK Summer Event 2026: Datathon 2026",
     "endorsed_by": [
-      2,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -222,7 +286,9 @@
     "impact": "",
     "context": "Learned through Programming Foundations 2 course.",
     "endorsed_by": [
-      6
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -236,9 +302,15 @@
     "impact": "Served as PIC for a national-scale workshop with 200+ participants, owning ToR, content, and rundown; also managed an ambassador program end-to-end including speaker ToR, rundown, and pre-event assignments.",
     "context": "Event Intern — RISTEK Summer Event 2026: Datathon 2026; Ambassador Division Staff — Open House Fasilkom UI 2025",
     "endorsed_by": [
-      2,
-      5,
-      6
+      [
+        "faizy"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -252,9 +324,15 @@
     "impact": "Designed the division's end-to-end work timeline and workflow from the ground up, spanning recruitment (selection criteria, interview rubrics), five ambassador special programs with defined success metrics, and daily divisional operations.",
     "context": "PIC of Ambassador Division — Open House Fasilkom UI 2026",
     "endorsed_by": [
-      1,
-      2,
-      6
+      [
+        "faiz0197"
+      ],
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -268,9 +346,15 @@
     "impact": "Built the recruitment mechanism for staff and ambassadors, reaching 40+ staff and 160+ ambassador applicants; also supported recruitment for IT Development staff.",
     "context": "PIC of Ambassador Division — Open House Fasilkom UI 2026; HR Staff of IT Development — COMPFEST 18",
     "endorsed_by": [
-      1,
-      2,
-      6
+      [
+        "faiz0197"
+      ],
+      [
+        "faizy"
+      ],
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -284,7 +368,9 @@
     "impact": "Owned speaker ToR and served as primary liaison with speakers for Workshop 4; also managed speaker materials and appreciation certificates for an ambassador program.",
     "context": "Event Intern — RISTEK Summer Event 2026: Datathon 2026; Ambassador Division Staff — Open House Fasilkom UI 2025",
     "endorsed_by": [
-      6
+      [
+        "random"
+      ]
     ]
   }
 },
@@ -298,123 +384,19 @@
     "impact": "Led an 8-member Ambassador Division, holding full ownership of strategic direction and daily operations; also monitored team performance and fostered team culture as HR Staff.",
     "context": "PIC of Ambassador Division — Open House Fasilkom UI 2026; HR Staff of IT Development — COMPFEST 18",
     "endorsed_by": [
-      1,
-      2,
-      5,
-      6
+      [
+        "faiz0197"
+      ],
+      [
+        "faizy"
+      ],
+      [
+        "editorportofolio"
+      ],
+      [
+        "random"
+      ]
     ]
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 1,
-  "fields": {
-    "password": "pbkdf2_sha256$1500000$ajSzSkGEfSV7vxmzotlykx$DvGQw6K0fFY9mVr9Wirgysmfbb1V1nN0ojtsHm3wSDU=",
-    "last_login": "2026-09-29T14:00:55.584Z",
-    "is_superuser": false,
-    "username": "faiz0197",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2026-09-27T09:56:05Z",
-    "groups": [
-      1
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 2,
-  "fields": {
-    "password": "pbkdf2_sha256$1500000$GfAC71QKIEywXGlMCGnwRv$nyccxG9cJErw8XyV5KSyD7k1VfonFPAo5QrRkphVtbc=",
-    "last_login": "2026-10-01T07:04:05.021Z",
-    "is_superuser": true,
-    "username": "faizy",
-    "first_name": "",
-    "last_name": "",
-    "email": "faizelriki@gmail.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-09-27T10:32:15.325Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 3,
-  "fields": {
-    "password": "pbkdf2_sha256$1500000$gUoylA2meLBQuP3T2lyMst$MyfxV4pLrcbuoyZ+l+5n+hh+7Y5uLO7A3UNM88i6UrY=",
-    "last_login": "2026-09-29T14:01:50.677Z",
-    "is_superuser": false,
-    "username": "test",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2026-09-29T14:01:27.263Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 4,
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$DZadv4LduXUQhT1HLisd2L$MFvOnAjCBYOcU7LPYlmXfsVUiFj8SQ/23VUoU56wZXE=",
-    "last_login": "2026-11-02T11:59:23.972Z",
-    "is_superuser": true,
-    "username": "faizportofolio",
-    "first_name": "",
-    "last_name": "",
-    "email": "faizyusuf.elriki@gmail.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-11-02T07:07:52.516Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 5,
-  "fields": {
-    "password": "pbkdf2_sha256$1500000$Y4JcYRdqDocSltsiW6O5EJ$GKeyjdHRPDdITv/KT+QQxQ1hh/mjGXvXJIGJM33Tz4o=",
-    "last_login": "2026-11-02T08:38:42.227Z",
-    "is_superuser": false,
-    "username": "editorportofolio",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2026-11-02T08:34:24Z",
-    "groups": [
-      1
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 6,
-  "fields": {
-    "password": "pbkdf2_sha256$1500000$h5U7dV3iLKVn7LSivcuWML$uJXcJyZO5on0/fAsoJE9pPJAoMOYcEjdwKR3crf1m6k=",
-    "last_login": "2026-11-02T08:40:22.703Z",
-    "is_superuser": false,
-    "username": "random",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2026-11-02T08:40:13.034Z",
-    "groups": [],
-    "user_permissions": []
   }
 }
 ]
