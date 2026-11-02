@@ -9,12 +9,22 @@
   <main>
     <section class="skill-section" id="skill">
       <div class="section-container">
-        <form id="skill-search-form" class="skill-search">
-          <input type="search" id="search-input" name="name" value="{{ name_query }}"
+        <!-- Pressing Enter or the button searches right away; typing searches after 300 ms -->
+        <form id="skill-search-form" class="skill-search"
+              hx-get="{% url 'main:search_skill' %}"
+              hx-target="#skill-list"
+              hx-swap="innerHTML"
+              hx-indicator="#search-indicator"
+              data-error-title="Search failed">
+          <input type="search" id="search-input" name="q" value="{{ query }}"
                  placeholder="Search skill by name" aria-label="Search skill by name"
-                 class="skill-search__input">
+                 class="skill-search__input"
+                 hx-get="{% url 'main:search_skill' %}"
+                 hx-trigger="input changed delay:300ms, search"
+                 hx-sync="this:replace">
           <button type="submit" class="button">Search</button>
         </form>
+        <span id="search-indicator" class="htmx-indicator">Searching...</span>
 
         <div class="section-header skill-header">
           <div>
@@ -30,350 +40,15 @@
           {% endif %}
         </div>
 
-        <!-- Loading State -->
-        <div id="loading" class="empty-state hide">
-          <p>Loading skills...</p>
+        <!-- Skill groups: rendered by the server, replaced by HTMX -->
+        <div id="skill-list">
+          {% include "components/skill_groups.html" %}
         </div>
-        <!-- Error State -->
-        <div id="error" class="empty-state hide">
-          <p>Failed to load skills. Please try again.</p>
-        </div>
-        <!-- Empty State -->
-        <div id="empty" class="empty-state hide">
-          <p id="empty-message">No skills have been added yet.</p>
-        </div>
-        <!-- Skill groups (filled by JavaScript) -->
-        <div id="skill-list" class="hide"></div>
       </div>
     </section>
   </main>
 
   {% if user.is_superuser %}
-    {% include "components/skill_delete_modal.html" %}
     {% include "components/skill_form_modal.html" %}
   {% endif %}
-
-  <script>
-    // Configuration
-    const SKILL_ENDPOINT = "{% url 'main:get_skill_json' %}";
-    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    const CAN_EDIT = "{{ perms.main.change_skill|yesno:'true,false' }}" === "true";
-    const CSRF_INPUT_HTML = `{% csrf_token %}`;
-    // Dummy UUID, replaced by the real ID from the JSON data
-    const DUMMY_ID = "00000000-0000-0000-0000-000000000000";
-    const ENDORSE_URL = "{% url 'main:toggle_endorse_ajax' '00000000-0000-0000-0000-000000000000' %}";
-    const EDIT_URL = "{% url 'main:update_skill' '00000000-0000-0000-0000-000000000000' %}";
-    const DELETE_URL = "{% url 'main:delete_skill_ajax' '00000000-0000-0000-0000-000000000000' %}";
-    const PROFICIENCY_LEVELS = 4;
-    let skillAbortController;
-    // Remember which category groups are open so they stay open after a refresh
-    const openCategories = new Set();
-
-    // DOM elements
-    const loadingState = document.getElementById('loading');
-    const errorState = document.getElementById('error');
-    const emptyState = document.getElementById('empty');
-    const emptyMessage = document.getElementById('empty-message');
-    const listContainer = document.getElementById('skill-list');
-    const searchForm = document.getElementById('skill-search-form');
-    const searchInput = document.getElementById('search-input');
-    const SEARCH_DEBOUNCE_DELAY = 300;
-    let searchDebounceTimer;
-
-    // These only exist for superusers, so check before using them
-    const deleteModalForm = document.getElementById('delete-skill-form');
-    const deleteModalName = document.getElementById('delete-skill-name');
-
-    // Show only the relevant page section
-    function displayPageSection({ showLoading = false, showError = false,
-                                  showEmpty = false, showList = false }) {
-      loadingState.classList.toggle('hide', !showLoading);
-      errorState.classList.toggle('hide', !showError);
-      emptyState.classList.toggle('hide', !showEmpty);
-      listContainer.classList.toggle('hide', !showList);
-    }
-
-    // Build one skill card from a JSON entry
-    function buildSkillCard(item) {
-      const skill = item.fields;
-      const id = item.pk;
-
-      const segmentsHtml = Array.from({ length: PROFICIENCY_LEVELS }, (_, index) =>
-        `<span class="bar-segment${index < skill.proficiency ? ' filled' : ''}"></span>`
-      ).join('');
-
-      const impactHtml = skill.impact
-        ? `<p class="skill-impact">${escapeHtml(skill.impact)}</p>`
-        : '';
-      const contextHtml = skill.context
-        ? `<p class="skill-context">${escapeHtml(skill.context)}</p>`
-        : '';
-
-      const endorseUrl = ENDORSE_URL.replace(DUMMY_ID, id);
-      const endorsedClass = skill.is_endorsed ? ' is-endorsed' : '';
-      const endorseText = skill.is_endorsed ? 'Remove Endorsement' : 'Endorse';
-      const endorseTitle = skill.endorse_count > 0
-        ? `Endorsed by ${escapeHtml(skill.endorsed_by_names)}`
-        : 'Be the first to endorse';
-
-      const editHtml = CAN_EDIT
-        ? `<div class="skill-actions">
-             <a href="${EDIT_URL.replace(DUMMY_ID, id)}" class="button button-secondary">Edit</a>
-           </div>`
-        : '';
-
-      const deleteHtml = IS_SUPERUSER
-        ? `<div class="skill-actions">
-             <button type="button"
-                     class="button button-danger js-delete-skill"
-                     popovertarget="delete-skill-modal"
-                     data-delete-url="${DELETE_URL.replace(DUMMY_ID, id)}"
-                     data-name="${escapeHtml(skill.name)}"
-                     title="Delete skill">Delete Skill</button>
-           </div>`
-        : '';
-
-      const card = document.createElement('article');
-      card.className = 'skill-card';
-      card.innerHTML = `
-        <h2>${escapeHtml(skill.name)}</h2>
-        <div class="proficiency-bar">${segmentsHtml}</div>
-        <p class="proficiency-label">${escapeHtml(skill.proficiency_display)}</p>
-        ${impactHtml}
-        ${contextHtml}
-        <form method="post" action="${endorseUrl}" class="endorse-form">
-          ${CSRF_INPUT_HTML}
-          <button type="submit" class="button button-endorse${endorsedClass}" title="${endorseTitle}">
-            <span aria-hidden="true">★</span>
-            ${endorseText}
-            <span class="endorse-count">${skill.endorse_count}</span>
-          </button>
-        </form>
-        ${editHtml}
-        ${deleteHtml}
-      `;
-      return card;
-    }
-
-    function buildCategoryGroup(categoryCode, categoryLabel, items, forceOpen) {
-      const group = document.createElement('div');
-      group.className = 'skill-category-group';
-      group.dataset.category = categoryCode;
-      if (forceOpen || openCategories.has(categoryCode)) group.classList.add('open');
-
-      const summary = document.createElement('button');
-      summary.type = 'button';
-      summary.className = 'skill-category-summary';
-      summary.textContent = categoryLabel;
-
-      const collapse = document.createElement('div');
-      collapse.className = 'skill-collapse';
-      const grid = document.createElement('div');
-      grid.className = 'skill-grid';
-      items.forEach(item => grid.appendChild(buildSkillCard(item)));
-
-      collapse.appendChild(grid);
-      group.append(summary, collapse);
-      return group;
-    }
-
-    function renderSkills(skillData, searchQuery) {
-      const groups = new Map(); // code -> { label, items }
-      skillData.forEach(item => {
-        const code = item.fields.category;
-        const label = item.fields.category_display;
-        if (!groups.has(code)) groups.set(code, { label, items: [] });
-        groups.get(code).items.push(item);
-      });
-
-      listContainer.innerHTML = '';
-      groups.forEach(({ label, items }, code) => {
-        listContainer.appendChild(buildCategoryGroup(code, label, items, Boolean(searchQuery)));
-      });
-    }
-
-    // Fetch skill data from the JSON endpoint
-    async function fetchSkills(searchQuery = '', { silent = false } = {}) {
-      // Cancel the previous request so stale results never overwrite newer ones
-      if (skillAbortController) skillAbortController.abort();
-      skillAbortController = new AbortController();
-
-      try {
-        // silent = refresh the list in place without flashing the loading state
-        if (!silent) displayPageSection({ showLoading: true });
-        const url = searchQuery
-          ? `${SKILL_ENDPOINT}?name=${encodeURIComponent(searchQuery)}`
-          : SKILL_ENDPOINT;
-
-        const response = await fetch(url, {
-          headers: { 'Accept': 'application/json' },
-          signal: skillAbortController.signal,
-        });
-        if (!response.ok) throw new Error('Failed to fetch data');
-
-        const skillData = await response.json();
-        if (skillData.length === 0) {
-          emptyMessage.textContent = searchQuery
-            ? 'No skill matches that name.'
-            : 'No skills have been added yet.';
-          displayPageSection({ showEmpty: true });
-        } else {
-          renderSkills(skillData, searchQuery);
-          displayPageSection({ showList: true });
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        console.error('Error loading skills:', error);
-        displayPageSection({ showError: true });
-      }
-    }
-
-    // One listener for every card: expand/collapse groups and fill the delete modal
-    listContainer.addEventListener('click', function (event) {
-      const summary = event.target.closest('.skill-category-summary');
-      if (summary) {
-        const group = summary.closest('.skill-category-group');
-        group.classList.toggle('open');
-        if (group.classList.contains('open')) {
-          openCategories.add(group.dataset.category);
-        } else {
-          openCategories.delete(group.dataset.category);
-        }
-        return;
-      }
-
-      const deleteButton = event.target.closest('.js-delete-skill');
-      if (deleteButton && deleteModalForm && deleteModalName) {
-        deleteModalForm.action = deleteButton.dataset.deleteUrl;
-        deleteModalName.textContent = deleteButton.dataset.name;
-      }
-    });
-
-    function searchSkills() {
-      fetchSkills(searchInput.value.trim());
-    }
-
-    // Debounce: wait until the user stops typing before sending a request
-    searchInput.addEventListener('input', function () {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(searchSkills, SEARCH_DEBOUNCE_DELAY);
-    });
-
-    // Search button / Enter: cancel any pending timer, then search right away
-    searchForm.addEventListener('submit', function (event) {
-      event.preventDefault();
-      clearTimeout(searchDebounceTimer);
-      searchSkills();
-    });
-
-    // Close the add-skill modal (used after a successful save)
-    function closeSkillModal() {
-      document.getElementById('add-skill-modal').hidePopover();
-    }
-
-    const CREATE_SKILL_ENDPOINT = "{% url 'main:create_skill_ajax' %}";
-    const skillForm = document.getElementById('skill-form');
-
-    // Send the form to the server with fetch (no page reload)
-    async function addSkill(event) {
-      event.preventDefault();
-      const submitButton = skillForm.querySelector('button[type="submit"]');
-      submitButton.disabled = true; // prevent double submit
-
-      try {
-        const response = await fetch(CREATE_SKILL_ENDPOINT, {
-          method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') },
-          body: new FormData(skillForm),
-        });
-        // .catch handles non-JSON replies (e.g. an HTML 403 page from CSRF failure)
-        const result = await response.json().catch(() => ({}));
-
-        if (response.ok) {
-          skillForm.reset();
-          closeSkillModal();
-          showToast('Success', 'New skill added successfully!', 'success');
-          fetchSkills(searchInput.value.trim());
-        } else {
-          const errorMessages = result.errors
-            ? Object.entries(result.errors).flatMap(([field, errs]) =>
-                errs.map(error => `${field}: ${error.message}`))
-            : [result.message || `Something went wrong (status ${response.status}).`];
-          showToast('Failed to add skill', errorMessages.join(' '), 'error');
-        }
-      } catch (error) {
-        console.error('Error adding skill:', error);
-        showToast('Failed to add skill',
-                  'Could not reach the server. Please try again.', 'error');
-      } finally {
-        submitButton.disabled = false;
-      }
-    }
-
-    // The form only exists for superusers, so check before attaching
-    if (skillForm) {
-      skillForm.addEventListener('submit', addSkill);
-    }
-
-    // Delete without reloading the page
-    if (deleteModalForm) {
-      deleteModalForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
-        const submitButton = deleteModalForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true; // prevent double submit
-
-        try {
-          const response = await fetch(deleteModalForm.action, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-          });
-          const result = await response.json().catch(() => ({}));
-          document.getElementById('delete-skill-modal').hidePopover();
-
-          if (response.ok) {
-            showToast('Success', result.message || 'Skill deleted successfully!', 'success');
-            fetchSkills(searchInput.value.trim(), { silent: true });
-          } else {
-            showToast('Failed to delete skill',
-                      result.message || `Something went wrong (status ${response.status}).`, 'error');
-          }
-        } catch (error) {
-          console.error('Error deleting skill:', error);
-          showToast('Failed to delete skill',
-                    'Could not reach the server. Please try again.', 'error');
-        } finally {
-          submitButton.disabled = false;
-        }
-      });
-    }
-
-    // Endorse / remove endorsement without reloading the page
-    listContainer.addEventListener('submit', async function (event) {
-      const form = event.target.closest('.endorse-form');
-      if (!form) return;
-      event.preventDefault();
-
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        });
-        const result = await response.json().catch(() => ({}));
-
-        if (response.ok) {
-          fetchSkills(searchInput.value.trim(), { silent: true });
-        } else {
-          showToast('Could not update endorsement',
-                    result.message || `Something went wrong (status ${response.status}).`, 'error');
-        }
-      } catch (error) {
-        console.error('Error toggling endorsement:', error);
-        showToast('Could not update endorsement',
-                  'Could not reach the server. Please try again.', 'error');
-      }
-    });
-
-    // Start
-    fetchSkills(searchInput.value.trim());
-  </script>
 {% endblock content %}

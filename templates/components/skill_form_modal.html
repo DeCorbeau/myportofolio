@@ -16,9 +16,15 @@
             popovertargetaction="hide"
             aria-label="Close add skill form">&times;</button>
     <h2 id="add-skill-modal-title">Add New Skill</h2>
+    <!-- hx-include sends the search box too, so the current filter is kept -->
     <form id="skill-form"
-          method="post"
-          action="{% url 'main:create_skill' %}"
+          hx-post="{% url 'main:create_skill' %}"
+          hx-include="#skill-search-form"
+          hx-target="#skill-list"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('add-skill-modal').hidePopover(); }"
+          data-error-title="Failed to add skill"
           class="project-form">
       {% csrf_token %}
       {% for field in form %}
