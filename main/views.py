@@ -245,7 +245,12 @@ def show_skill(request):
         "short_name": "Faiz",
         "query": query,
         "form": SkillForm(),
-        "groups": build_skill_groups(query, request.user),
+        # auto_id berbeda supaya id input form edit tidak bentrok dengan form tambah
+        "edit_form": SkillForm(auto_id="edit_skill_%s"),
+        # urutan dan label grup diambil dari choices model, jadi tidak ditulis dua kali
+        "categories": [
+            {"code": code, "label": label} for code, label in Skill.SKILL_CATEGORIES
+        ],
     }
     return render(request, "skill.html", context)
 
